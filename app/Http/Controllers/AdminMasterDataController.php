@@ -127,45 +127,62 @@ class AdminMasterDataController extends Controller
         ]);
     }
 
-    public function updateUser(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
+   public function updateUser(Request $request, int $id): RedirectResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
+    }
+
+    $actor = $request->session()->get('auth_user', []);
+    $isSuperAdmin = $this->isSuperAdmin($actor['role'] ?? null);
+
+    // ambil user target dulu
+    $target = DB::table('users')->where('id_user', $id)->first();
+    if (!$target) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'User tidak ditemukan.');
+    }
+
+    // validasi (role optional)
+    $validated = $request->validate([
+        'status' => ['nullable', 'in:pending,approved,rejected'],
+        'role' => ['nullable', 'in:superadmin,admin,mahasiswa'],
+    ]);
+
+    // fallback kalau tidak dikirim (karena disabled)
+    $status = $validated['status'] ?? $target->status;
+    $role   = $validated['role'] ?? $target->role;
+
+    // validasi khusus superadmin
+    if ($isSuperAdmin) {
+
+        if ((int) ($actor['id_user'] ?? 0) === $id && $role !== 'superadmin') {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Super Admin tidak dapat menurunkan role akun sendiri.');
         }
 
-        $actor = $request->session()->get('auth_user', []);
-        $isSuperAdmin = $this->isSuperAdmin($actor['role'] ?? null);
+    } else {
+        // admin biasa tidak boleh ubah admin lain
+        if (in_array((string) $target->role, ['admin', 'superadmin'], true)) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Admin biasa tidak dapat mengubah akun admin lain.');
+        }
 
-        $validated = $request->validate([
-            'status' => ['required', 'in:pending,approved,rejected'],
-            'role' => ['nullable', 'in:superadmin,admin,mahasiswa'],
+        // admin biasa tidak boleh ubah role
+        $role = $target->role;
+    }
+
+    // update
+    DB::table('users')
+        ->where('id_user', $id)
+        ->update([
+            'status' => $status,
+            'role' => $role,
         ]);
 
-        $target = DB::table('users')->where('id_user', $id)->first();
-        if (!$target) {
-            return redirect()->route('admin.users.index')->with('error', 'User tidak ditemukan.');
-        }
-
-        $updates = [
-            'status' => $validated['status'],
-        ];
-
-        if ($isSuperAdmin && isset($validated['role'])) {
-            if ((int) ($actor['id_user'] ?? 0) === $id && $validated['role'] !== 'superadmin') {
-                return redirect()->route('admin.users.index')->with('error', 'Super Admin tidak dapat menurunkan role akun sendiri.');
-            }
-
-            $updates['role'] = $validated['role'];
-        }
-
-        if (!$isSuperAdmin && in_array((string) $target->role, ['admin', 'superadmin'], true)) {
-            return redirect()->route('admin.users.index')->with('error', 'Admin biasa tidak dapat mengubah akun admin lain.');
-        }
-
-        DB::table('users')->where('id_user', $id)->update($updates);
-
-        return redirect()->route('admin.users.index')->with('success', 'Data user berhasil diperbarui.');
-    }
+    return redirect()->route('admin.users.index')
+        ->with('success', 'Data user berhasil diperbarui 🚀');
+}
 
     public function updateJurusan(Request $request, int $id): RedirectResponse
     {
@@ -307,4 +324,117 @@ class AdminMasterDataController extends Controller
             'isSuperAdmin' => $this->isSuperAdmin($sessionUser['role'] ?? ''),
         ];
     }
+    public function profile(Request $request): View|RedirectResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
+    }
+
+    $user = $request->session()->get('auth_user');
+
+    return view('admin.profile', [
+        'user' => $user,
+        'activeMenu' => 'profile',
+        ...$this->getAdminContext($request),
+    ]);
+}
+
+public function updateProfile(Request $request): RedirectResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
+    }
+
+    $user = $request->session()->get('auth_user');
+
+    $validated = $request->validate([
+        'nama_lengkap' => ['required','max:100'],
+        'username' => ['required','max:50'],
+        'email' => ['required','email','max:100'],
+    ]);
+
+    DB::table('users')
+        ->where('id_user', $user['id_user'])
+        ->update([
+            'nama_lengkap' => trim($validated['nama_lengkap']),
+            'username' => trim($validated['username']),
+            'email' => trim($validated['email']),
+        ]);
+
+    // update session
+    $user['nama_lengkap'] = $validated['nama_lengkap'];
+    $user['username'] = $validated['username'];
+    $user['email'] = $validated['email'];
+
+    $request->session()->put('auth_user', $user);
+
+    return redirect()->route('admin.profile')
+        ->with('success', 'Profil berhasil diperbarui');
+}public function updatePassword(Request $request): RedirectResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
+    }
+
+    $user = $request->session()->get('auth_user');
+
+    $validated = $request->validate([
+        'old_password' => ['required'],
+        'new_password' => ['required','min:6','confirmed'],
+    ]);
+
+    $dbUser = DB::table('users')
+        ->where('id_user', $user['id_user'])
+        ->first();
+
+    // cek password lama
+    if (!password_verify($validated['old_password'], $dbUser->password_hash)) {
+        return redirect()->route('admin.profile')
+            ->with('error', 'Password lama tidak sesuai');
+    }
+
+    // update password baru
+    DB::table('users')
+        ->where('id_user', $user['id_user'])
+        ->update([
+            'password_hash' => password_hash($validated['new_password'], PASSWORD_BCRYPT),
+        ]);
+
+    return redirect()->route('admin.profile')
+        ->with('success', 'Password berhasil diperbarui 🔐');
+}
+    public function storeAdmin(Request $request): RedirectResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
+    }
+
+    $actor = $request->session()->get('auth_user', []);
+    if (!$this->isSuperAdmin($actor['role'] ?? null)) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'Hanya Super Admin yang dapat menambah admin.');
+    }
+
+$validated = $request->validate([
+    'nama_lengkap' => ['required','string','max:100'],
+    'nim' => ['required','string','max:30','unique:users,nim'],
+    'email' => ['required','email','max:100','unique:users,email'],
+    'username' => ['required','string','max:50','unique:users,username'],
+    'password' => ['required','min:6','confirmed'],
+]);
+
+DB::table('users')->insert([
+    'nama_lengkap' => trim($validated['nama_lengkap']),
+    'nim' => trim($validated['nim']), // ✅ manual input
+    'email' => trim($validated['email']),
+    'username' => trim($validated['username']),
+    'password_hash' => password_hash($validated['password'], PASSWORD_BCRYPT),
+    'role' => 'admin',
+    'status' => 'approved',
+    'created_at' => now(),
+]);
+
+    return redirect()->route('admin.users.index')
+        ->with('success', 'Admin baru berhasil ditambahkan 🚀');
+}
 }

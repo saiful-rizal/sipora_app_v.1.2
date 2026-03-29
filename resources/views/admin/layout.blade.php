@@ -3,147 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIPORA | @yield('title', 'Admin')</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <title>SIPORA | @yield('title','Admin')</title>
+
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="{{ asset('assets/css/styles.css') }}" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- CUSTOM -->
     <link href="{{ asset('assets/css/admin-ux.css') }}" rel="stylesheet">
 </head>
-<body class="adminx-body">
-    @php
-        $activeMenu = $activeMenu ?? 'dashboard';
-        $displayRole = $isSuperAdmin ? 'Super Admin' : 'Admin';
-    @endphp
 
-    <div class="adminx-layout">
-        <aside class="adminx-sidebar" id="adminxSidebar">
-            <div class="adminx-brand">
-                <img src="{{ asset('assets/logo.png') }}" alt="Logo SIPORA">
-                <div>
-                    <strong>SIPORA</strong>
-                    <small>Admin Panel</small>
-                </div>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="brand d-flex gap-2 mb-4 align-items-center">
+
+        <img src="{{ asset('assets/logo.png') }}"
+             style="height:40px; width:auto; object-fit:contain;">
+
+        <div>
+            <strong>SIPORA</strong><br>
+            <small>Admin Panel</small>
+        </div>
+    </div>
+
+    <a href="{{ route('admin.dashboard') }}" class="{{ $activeMenu=='dashboard'?'active':'' }}">
+        <i class="bi bi-grid"></i> Dashboard
+    </a>
+
+    <a href="{{ route('admin.jurusan.index') }}" class="{{ $activeMenu=='jurusan'?'active':'' }}">
+        <i class="bi bi-diagram-3"></i> Jurusan
+    </a>
+
+    <a href="{{ route('admin.prodi.index') }}" class="{{ $activeMenu=='prodi'?'active':'' }}">
+        <i class="bi bi-mortarboard"></i> Prodi
+    </a>
+
+    <a href="{{ route('admin.tema.index') }}" class="{{ $activeMenu=='tema'?'active':'' }}">
+        <i class="bi bi-bookmarks"></i> Tema
+    </a>
+
+    <a href="{{ route('admin.documents.index') }}" class="{{ $activeMenu=='documents'?'active':'' }}">
+    <i class="bi bi-file-earmark-text"></i> Dokumen
+</a>
+
+    <a href="{{ route('admin.users.index') }}" class="{{ $activeMenu=='users'?'active':'' }}">
+        <i class="bi bi-people"></i> User
+    </a>
+
+    <hr>
+
+    <!-- LOGOUT BUTTON (trigger modal) -->
+    <button class="btn btn-outline-danger w-100 mt-2"
+            data-bs-toggle="modal"
+            data-bs-target="#logoutModal">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+
+        <h5>@yield('page_label')</h5>
+
+        <div class="d-flex gap-3 align-items-center">
+
+            <!-- SEARCH -->
+            <div class="search-topbar">
+                <i class="bi bi-search"></i>
+                <input type="text" id="globalSearch" placeholder="Cari data..."
+                       data-table-target="@yield('search_target')">
             </div>
 
-            <nav class="adminx-menu">
-                <a href="{{ route('admin.dashboard') }}" class="{{ $activeMenu === 'dashboard' ? 'active' : '' }}">
-                    <i class="bi bi-grid"></i>
-                    <span>Dashboard Admin</span>
-                </a>
-                <a href="{{ route('admin.jurusan.index') }}" class="{{ $activeMenu === 'jurusan' ? 'active' : '' }}">
-                    <i class="bi bi-diagram-3"></i>
-                    <span>Data Jurusan</span>
-                </a>
-                <a href="{{ route('admin.prodi.index') }}" class="{{ $activeMenu === 'prodi' ? 'active' : '' }}">
-                    <i class="bi bi-mortarboard"></i>
-                    <span>Data Prodi</span>
-                </a>
-                <a href="{{ route('admin.tema.index') }}" class="{{ $activeMenu === 'tema' ? 'active' : '' }}">
-                    <i class="bi bi-bookmarks"></i>
-                    <span>Data Tema</span>
-                </a>
-                <a href="{{ route('admin.users.index') }}" class="{{ $activeMenu === 'users' ? 'active' : '' }}">
-                    <i class="bi bi-people"></i>
-                    <span>Pengelolaan User</span>
-                </a>
-                <a href="{{ route('dashboard') }}">
-                    <i class="bi bi-house"></i>
-                    <span>Dashboard Biasa</span>
-                </a>
-            </nav>
+          <div class="dropdown">
 
-            <div class="adminx-sidebar-footer">
-                <form action="{{ route('auth.logout') }}" method="POST">
+    <div class="avatar dropdown-toggle"
+         data-bs-toggle="dropdown"
+         style="cursor:pointer;">
+        {{ strtoupper(substr($displayName ?? 'A',0,1)) }}
+    </div>
+
+    <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
+         style="width:240px; border-radius:16px;">
+
+        <!-- USER INFO -->
+        <div class="mb-3">
+            <strong>{{ $displayName }}</strong><br>
+            <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
+        </div>
+
+        <hr class="my-2">
+
+        <!-- MENU -->
+        <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
+            <i class="bi bi-person"></i> Profile
+        </a>
+
+        <a href="#" class="dropdown-item d-flex align-items-center gap-2">
+            <i class="bi bi-gear"></i> Settings
+        </a>
+
+        <hr class="my-2">
+
+    
+
+    </div>
+
+</div>
+
+        </div>
+    </div>
+
+    <div class="content">
+        @yield('content')
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div id="overlay" class="overlay" onclick="closeSlide()"></div>
+
+
+<!-- ================= MODAL LOGOUT ================= -->
+<div class="modal fade" id="logoutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h6 class="modal-title">Konfirmasi Logout</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                Anda akan keluar dari sistem. Lanjutkan?
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Batal
+                </button>
+
+                <!-- FORM LOGOUT REAL -->
+                <form method="POST" action="{{ route('auth.logout') }}">
                     @csrf
-                    <button type="submit" class="adminx-logout-btn">
-                        <i class="bi bi-box-arrow-right"></i>
-                        Logout
+                    <button class="btn btn-danger">
+                        Ya, Logout
                     </button>
                 </form>
             </div>
-        </aside>
 
-        <main class="adminx-main">
-            <header class="adminx-topbar">
-                <button class="adminx-menu-toggle" type="button" onclick="toggleAdminSidebar()">
-                    <i class="bi bi-list"></i>
-                </button>
-
-                <div class="adminx-topbar-search">
-                    <i class="bi bi-search"></i>
-                    <input type="text" value="@yield('page_label', 'Admin Panel')" readonly>
-                </div>
-
-                <div class="adminx-user-chip">
-                    <div class="avatar">{{ strtoupper(mb_substr($displayName, 0, 1)) }}</div>
-                    <div>
-                        <strong>{{ $displayName }}</strong>
-                        <small>{{ $displayRole }}</small>
-                    </div>
-                </div>
-            </header>
-
-            <section class="adminx-content">
-                <div class="adminx-quicknav">
-                    <a href="{{ route('admin.dashboard') }}" class="{{ $activeMenu === 'dashboard' ? 'active' : '' }}">Dashboard</a>
-                    <a href="{{ route('admin.jurusan.index') }}" class="{{ $activeMenu === 'jurusan' ? 'active' : '' }}">Jurusan</a>
-                    <a href="{{ route('admin.prodi.index') }}" class="{{ $activeMenu === 'prodi' ? 'active' : '' }}">Prodi</a>
-                    <a href="{{ route('admin.tema.index') }}" class="{{ $activeMenu === 'tema' ? 'active' : '' }}">Tema</a>
-                    <a href="{{ route('admin.users.index') }}" class="{{ $activeMenu === 'users' ? 'active' : '' }}">User</a>
-                </div>
-
-                @if(session('success'))
-                    <div class="alert alert-success admin-alert" role="alert">
-                        <i class="bi bi-check-circle"></i> {{ session('success') }}
-                    </div>
-                @endif
-
-                @if(session('error'))
-                    <div class="alert alert-danger admin-alert" role="alert">
-                        <i class="bi bi-exclamation-circle"></i> {{ session('error') }}
-                    </div>
-                @endif
-
-                @if($errors->any())
-                    <div class="alert alert-danger admin-alert" role="alert">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        {{ $errors->first() }}
-                    </div>
-                @endif
-
-                @yield('content')
-            </section>
-        </main>
+        </div>
     </div>
+</div>
 
-    <script>
-        function toggleAdminSidebar() {
-            const sidebar = document.getElementById('adminxSidebar');
-            sidebar.classList.toggle('open');
-        }
 
-        function applyTableSearch(inputElement) {
-            const tableSelector = inputElement.getAttribute('data-table-search');
-            const table = document.querySelector(tableSelector);
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-            if (!table) {
-                return;
-            }
+<script>
+/* ===== GLOBAL SEARCH ===== */
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('globalSearch');
 
-            const keyword = inputElement.value.toLowerCase().trim();
-            const rows = table.querySelectorAll('tbody tr');
+    if (input) {
+        input.addEventListener('keyup', function () {
+            const keyword = input.value.toLowerCase();
+            const target = input.dataset.tableTarget;
 
-            rows.forEach(function (row) {
-                const rowText = row.innerText.toLowerCase();
-                row.style.display = rowText.includes(keyword) ? '' : 'none';
-            });
-        }
+            if (!target) return;
 
-        document.querySelectorAll('[data-table-search]').forEach(function (inputElement) {
-            inputElement.addEventListener('input', function () {
-                applyTableSearch(inputElement);
+            document.querySelectorAll(`${target} tbody tr`).forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(keyword) ? '' : 'none';
             });
         });
-    </script>
+    }
+
+    /* TOAST */
+    const toastEl = document.getElementById('liveToast');
+    if (toastEl) {
+        new bootstrap.Toast(toastEl).show();
+    }
+});
+
+/* SLIDE */
+function openSlide(){
+    document.getElementById('slidePanel')?.classList.add('open');
+}
+function closeSlide(){
+    document.getElementById('slidePanel')?.classList.remove('open');
+}
+</script>
+
+@stack('scripts')
+
 </body>
 </html>

@@ -86,6 +86,17 @@ Route::middleware(['session.auth'])->prefix('admin')->name('admin.')->group(func
     Route::get('/tema', [AdminMasterDataController::class, 'temaIndex'])->name('tema.index');
     Route::get('/users', [AdminMasterDataController::class, 'usersIndex'])->name('users.index');
     Route::put('/users/{id}', [AdminMasterDataController::class, 'updateUser'])->name('users.update');
+    Route::post('/users/store-admin', [AdminMasterDataController::class, 'storeAdmin'])
+    ->name('users.store-admin');
+
+    Route::get('/profile', [AdminMasterDataController::class, 'profile'])
+    ->name('profile');
+
+Route::post('/profile/update', [AdminMasterDataController::class, 'updateProfile'])
+    ->name('profile.update');
+
+Route::post('/profile/password', [AdminMasterDataController::class, 'updatePassword'])
+    ->name('profile.password');
 
     Route::put('/jurusan/{id}', [AdminMasterDataController::class, 'updateJurusan'])->name('jurusan.update');
     Route::delete('/jurusan/{id}', [AdminMasterDataController::class, 'deleteJurusan'])->name('jurusan.delete');
@@ -95,6 +106,13 @@ Route::middleware(['session.auth'])->prefix('admin')->name('admin.')->group(func
 
     Route::put('/tema/{id}', [AdminMasterDataController::class, 'updateTema'])->name('tema.update');
     Route::delete('/tema/{id}', [AdminMasterDataController::class, 'deleteTema'])->name('tema.delete');
+    
+    Route::get('/documents', function () {
+    return view('admin.documents', [
+        'activeMenu' => 'documents',
+        'displayName' => session('auth_user.nama_lengkap') ?? 'Admin',
+    ]);
+})->name('documents.index');
 });
 
 // Logout route - Auth only
