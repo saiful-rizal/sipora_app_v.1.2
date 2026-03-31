@@ -101,69 +101,104 @@
 
         </div>
     </div>
-    <section class="admin-panel mt-4">
-        <div class="admin-panel-head">
-            <h5>Statistik Dokumen</h5>
-            <small>Grafik jumlah dokumen berdasarkan status</small>
-        </div>
+    <div class="row mt-4">
 
-        <div class="row p-3">
-            <div class="col-md-6">
-                <canvas id="barChart"></canvas>
-            </div>
-
-            <div class="col-md-6">
-                <canvas id="pieChart"></canvas>
+        <!-- Bar Chart -->
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h5 class="fw-semibold">Statistik Status Dokumen</h5>
+                    <p class="text-muted small">Jumlah dokumen berdasarkan status</p>
+                    <canvas id="statusBarChart"></canvas>
+                </div>
             </div>
         </div>
+
+        <!-- Doughnut Chart -->
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <h5 class="fw-semibold">Persentase Status Dokumen</h5>
+                    <p class="text-muted small">Distribusi Dokumen</p>
+                    <canvas id="statusPieChart" style="max-height:250px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row p-3">
+        <div class="col-md-6">
+            <canvas id="barChart"></canvas>
+        </div>
+
+        <div class="col-md-6">
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script>
-        const labels = @json($labels ?? []);
-        const dataJumlah = @json($dataJumlah ?? []);
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        new Chart(document.getElementById('barChart'), {
+    <script>
+        const labels = @json($labels);
+        const dataJumlah = @json($dataJumlah);
+
+        const colors = [
+            "#6366F1",
+            "#22C55E",
+            "#F59E0B",
+            "#EF4444",
+            "#06B6D4"
+        ];
+
+
+        // BAR CHART
+        new Chart(document.getElementById('statusBarChart'), {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
                     label: 'Jumlah Dokumen',
                     data: dataJumlah,
-                    backgroundColor: [
-                        '#36A2EB',
-                        '#FF6384',
-                        '#4BC0C0',
-                        '#FFCE56',
-                        '#9966FF'
-                    ]
+                    backgroundColor: colors,
+                    borderRadius: 8,
+                    barThickness: 40
                 }]
             },
             options: {
                 responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
+                plugins: {
+                    legend: {
+                        display: false
                     }
-                }
+                },
+
             }
         });
 
-        new Chart(document.getElementById('pieChart'), {
-            type: 'pie',
+
+        // PIE / DOUGHNUT CHART
+        new Chart(document.getElementById('statusPieChart'), {
+            type: 'doughnut',
             data: {
                 labels: labels,
                 datasets: [{
                     data: dataJumlah,
-                    backgroundColor: [
-                        '#FF6384',
-                        '#36A2EB',
-                        '#FFCE56',
-                        '#4BC0C0',
-                        '#9966FF'
-                    ]
+                    backgroundColor: colors,
+                    borderWidth: 0
                 }]
+            },
+            options: {
+                responsive: true,
+                cutout: "65%",
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
+                }
             }
         });
     </script>

@@ -20,43 +20,47 @@
 <!-- SIDEBAR -->
 <div class="sidebar">
     <div class="brand d-flex gap-2 mb-4 align-items-center">
-
         <img src="{{ asset('assets/logo.png') }}"
              style="height:40px; width:auto; object-fit:contain;">
-
         <div>
             <strong>SIPORA</strong><br>
             <small>Admin Panel</small>
         </div>
     </div>
 
-    <a href="{{ route('admin.dashboard') }}" class="{{ $activeMenu=='dashboard'?'active':'' }}">
+    <a href="{{ route('admin.dashboard') }}"
+       class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         <i class="bi bi-grid"></i> Dashboard
     </a>
 
-    <a href="{{ route('admin.jurusan.index') }}" class="{{ $activeMenu=='jurusan'?'active':'' }}">
+    <a href="{{ route('admin.jurusan.index') }}"
+       class="{{ request()->routeIs('admin.jurusan.*') ? 'active' : '' }}">
         <i class="bi bi-diagram-3"></i> Jurusan
     </a>
 
-    <a href="{{ route('admin.prodi.index') }}" class="{{ $activeMenu=='prodi'?'active':'' }}">
+    <a href="{{ route('admin.prodi.index') }}"
+       class="{{ request()->routeIs('admin.prodi.*') ? 'active' : '' }}">
         <i class="bi bi-mortarboard"></i> Prodi
     </a>
 
-    <a href="{{ route('admin.tema.index') }}" class="{{ $activeMenu=='tema'?'active':'' }}">
+    <a href="{{ route('admin.tema.index') }}"
+       class="{{ request()->routeIs('admin.tema.*') ? 'active' : '' }}">
         <i class="bi bi-bookmarks"></i> Tema
     </a>
 
-    <a href="{{ route('admin.documents.index') }}" class="{{ $activeMenu=='documents'?'active':'' }}">
-    <i class="bi bi-file-earmark-text"></i> Dokumen
-</a>
+    <a href="{{ route('admin.documents.index') }}"
+       class="{{ request()->routeIs('admin.documents.*') ? 'active' : '' }}">
+        <i class="bi bi-file-earmark-text"></i> Dokumen
+    </a>
 
-    <a href="{{ route('admin.users.index') }}" class="{{ $activeMenu=='users'?'active':'' }}">
+    <a href="{{ route('admin.users.index') }}"
+       class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
         <i class="bi bi-people"></i> User
     </a>
 
     <hr>
 
-    <!-- LOGOUT BUTTON (trigger modal) -->
+    <!-- LOGOUT BUTTON -->
     <button class="btn btn-outline-danger w-100 mt-2"
             data-bs-toggle="modal"
             data-bs-target="#logoutModal">
@@ -69,7 +73,6 @@
 
     <!-- TOPBAR -->
     <div class="topbar">
-
         <h5>@yield('page_label')</h5>
 
         <div class="d-flex gap-3 align-items-center">
@@ -81,55 +84,46 @@
                        data-table-target="@yield('search_target')">
             </div>
 
-          <div class="dropdown">
+            <!-- USER -->
+            <div class="dropdown">
+                <div class="avatar dropdown-toggle"
+                     data-bs-toggle="dropdown"
+                     style="cursor:pointer;">
+                    {{ strtoupper(substr($displayName ?? 'A',0,1)) }}
+                </div>
 
-    <div class="avatar dropdown-toggle"
-         data-bs-toggle="dropdown"
-         style="cursor:pointer;">
-        {{ strtoupper(substr($displayName ?? 'A',0,1)) }}
-    </div>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
+                     style="width:240px; border-radius:16px;">
 
-    <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
-         style="width:240px; border-radius:16px;">
+                    <div class="mb-3">
+                        <strong>{{ $displayName ?? 'Admin' }}</strong><br>
+                        <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
+                    </div>
 
-        <!-- USER INFO -->
-        <div class="mb-3">
-            <strong>{{ $displayName }}</strong><br>
-            <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
-        </div>
+                    <hr class="my-2">
 
-        <hr class="my-2">
+                    <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
+                        <i class="bi bi-person"></i> Profile
+                    </a>
 
-        <!-- MENU -->
-        <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
-            <i class="bi bi-person"></i> Profile
-        </a>
+                    <a href="#" class="dropdown-item d-flex align-items-center gap-2">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
 
-        <a href="#" class="dropdown-item d-flex align-items-center gap-2">
-            <i class="bi bi-gear"></i> Settings
-        </a>
-
-        <hr class="my-2">
-
-    
-
-    </div>
-
-</div>
+                    <hr class="my-2">
+                </div>
+            </div>
 
         </div>
     </div>
 
+    <!-- CONTENT -->
     <div class="content">
         @yield('content')
     </div>
 </div>
 
-<!-- OVERLAY -->
-<div id="overlay" class="overlay" onclick="closeSlide()"></div>
-
-
-<!-- ================= MODAL LOGOUT ================= -->
+<!-- MODAL LOGOUT -->
 <div class="modal fade" id="logoutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -148,8 +142,7 @@
                     Batal
                 </button>
 
-                <!-- FORM LOGOUT REAL -->
-                <form method="POST" action="{{ route('auth.logout') }}">
+                <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="btn btn-danger">
                         Ya, Logout
@@ -161,11 +154,10 @@
     </div>
 </div>
 
-
+<!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-/* ===== GLOBAL SEARCH ===== */
 document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('globalSearch');
 
@@ -181,21 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-
-    /* TOAST */
-    const toastEl = document.getElementById('liveToast');
-    if (toastEl) {
-        new bootstrap.Toast(toastEl).show();
-    }
 });
-
-/* SLIDE */
-function openSlide(){
-    document.getElementById('slidePanel')?.classList.add('open');
-}
-function closeSlide(){
-    document.getElementById('slidePanel')?.classList.remove('open');
-}
 </script>
 
 @stack('scripts')
