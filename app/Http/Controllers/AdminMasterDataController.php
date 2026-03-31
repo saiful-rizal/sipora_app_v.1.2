@@ -284,13 +284,29 @@ class AdminMasterDataController extends Controller
             return $redirect;
         }
 
-        $users = DB::table('users')
+        $superAdminUser = DB::table('users')
             ->select('id_user', 'nama_lengkap', 'nim', 'username', 'email', 'role', 'status', 'created_at')
+            ->where('id_user', 1)
+            ->first();
+
+        $regularUsers = DB::table('users')
+            ->select('id_user', 'nama_lengkap', 'nim', 'username', 'email', 'role', 'status', 'created_at')
+            ->where('id_user', '>=', 2)
             ->orderByDesc('created_at')
             ->get();
 
+        $users = collect();
+
+        if ($superAdminUser) {
+            $users->push($superAdminUser);
+        }
+
+        $users = $users->concat($regularUsers);
+
         return view('admin.users', [
             'users' => $users,
+            'superAdminUser' => $superAdminUser,
+            'regularUsers' => $regularUsers,
             'activeMenu' => 'users',
             ...$this->getAdminContext($request)
         ]);
@@ -312,6 +328,11 @@ class AdminMasterDataController extends Controller
         if (!$target) {
             return redirect()->route('admin.users.index')
                 ->with('error', 'User tidak ditemukan');
+        }
+
+        if ((int) $target->id_user === 1) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Akun Super Admin utama tidak dapat diubah');
         }
 
         $validated = $request->validate([
@@ -357,6 +378,10 @@ class AdminMasterDataController extends Controller
 
         if (!$user) {
             return back()->with('error', 'User tidak ditemukan');
+        }
+
+        if ((int) $user->id_user === 1) {
+            return back()->with('error', 'Akun Super Admin utama tidak dapat dihapus');
         }
 
         if ($user->status !== 'rejected') {
