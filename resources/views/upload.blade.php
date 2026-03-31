@@ -10,7 +10,7 @@
     <link href="{{ asset('assets/css/styles.css') }}" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body data-old-prodi="{{ old('id_prodi') }}" data-upload-prodi-endpoint="{{ route('upload.get-prodi') }}">
+<body data-old-prodi="{{ old('id_prodi', $last_uploaded_document->id_prodi ?? '') }}" data-upload-prodi-endpoint="{{ route('upload.get-prodi') }}">
     <div class="bg-animation">
         <div class="bg-circle"></div>
         <div class="bg-circle"></div>
@@ -78,11 +78,24 @@
                         <input type="text" class="form-control" name="judul" required value="{{ old('judul') }}">
                     </div>
                     <div class="form-group">
+                        <label class="form-label" for="jenis_dokumen">Jenis Dokumen <span class="required">*</span></label>
+                        <select class="form-control" id="jenis_dokumen" name="jenis_dokumen" required>
+                            <option value="">-- Pilih Jenis Dokumen --</option>
+                            <option value="laporan_magang" @selected(old('jenis_dokumen', $last_uploaded_document->jenis_dokumen ?? '') === 'laporan_magang')>Laporan Magang</option>
+                            <option value="tugas_akhir" @selected(old('jenis_dokumen', $last_uploaded_document->jenis_dokumen ?? '') === 'tugas_akhir')>Tugas Akhir</option>
+                            <option value="skripsi" @selected(old('jenis_dokumen', $last_uploaded_document->jenis_dokumen ?? '') === 'skripsi')>Skripsi</option>
+                            <option value="tesis" @selected(old('jenis_dokumen', $last_uploaded_document->jenis_dokumen ?? '') === 'tesis')>Tesis</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
                         <label class="form-label" for="year_id">Tahun <span class="required">*</span></label>
                         <select class="form-control" id="year_id" name="year_id" required>
                             <option value="">-- Pilih Tahun --</option>
                             @foreach($tahun_data as $tahun)
-                                <option value="{{ $tahun->year_id }}" @selected(old('year_id') == $tahun->year_id)>{{ $tahun->tahun }}</option>
+                                <option value="{{ $tahun->year_id }}" @selected(old('year_id', $last_uploaded_document->year_id ?? null) == $tahun->year_id)>{{ $tahun->tahun }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -105,7 +118,7 @@
                         <select class="form-control" name="id_divisi" required>
                             <option value="">Pilih Divisi</option>
                             @foreach($divisi_data as $divisi)
-                                <option value="{{ $divisi->id_divisi }}" @selected(old('id_divisi') == $divisi->id_divisi)>{{ $divisi->nama_divisi }}</option>
+                                <option value="{{ $divisi->id_divisi }}" @selected(old('id_divisi', $last_uploaded_document->id_divisi ?? null) == $divisi->id_divisi)>{{ $divisi->nama_divisi }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -114,7 +127,7 @@
                         <select class="form-control" name="id_jurusan" id="id_jurusan" required>
                             <option value="">Pilih Jurusan</option>
                             @foreach($jurusan_data as $jurusan)
-                                <option value="{{ $jurusan->id_jurusan }}" @selected(old('id_jurusan') == $jurusan->id_jurusan)>{{ $jurusan->nama_jurusan }}</option>
+                                <option value="{{ $jurusan->id_jurusan }}" @selected(old('id_jurusan', $last_uploaded_document->id_jurusan ?? null) == $jurusan->id_jurusan)>{{ $jurusan->nama_jurusan }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -126,7 +139,7 @@
                         <select class="form-control" name="id_prodi" id="id_prodi" required>
                             <option value="">Pilih Program Studi</option>
                             @foreach($prodi_data as $prodi)
-                                <option value="{{ $prodi->id_prodi }}" @selected(old('id_prodi') == $prodi->id_prodi)>{{ $prodi->nama_prodi }}</option>
+                                <option value="{{ $prodi->id_prodi }}" @selected(old('id_prodi', $last_uploaded_document->id_prodi ?? null) == $prodi->id_prodi)>{{ $prodi->nama_prodi }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -135,7 +148,7 @@
                         <select class="form-control" name="id_tema" required>
                             <option value="">Pilih Tema</option>
                             @foreach($tema_data as $tema)
-                                <option value="{{ $tema->id_tema }}" @selected(old('id_tema') == $tema->id_tema)>{{ $tema->nama_tema }}</option>
+                                <option value="{{ $tema->id_tema }}" @selected(old('id_tema', $last_uploaded_document->id_tema ?? null) == $tema->id_tema)>{{ $tema->nama_tema }}</option>
                             @endforeach
                         </select>
                     </div>

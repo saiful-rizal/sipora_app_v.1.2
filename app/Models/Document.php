@@ -15,10 +15,12 @@ class Document extends Model
 
     protected $fillable = [
         'judul',
+        'jenis_dokumen',
         'abstrak',
         'kata_kunci',
         'uploader_id',
         'file_path',
+        'view_count',
         'file_size',
         'status_id',
         'id_jurusan',

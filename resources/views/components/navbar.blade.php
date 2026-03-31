@@ -723,6 +723,7 @@ nav {
       <a href="{{ url('/upload') }}" class="{{ request()->is('upload*') ? 'active' : '' }}">Unggah</a>
       <a href="{{ url('/browser') }}" class="{{ request()->is('browser*') ? 'active' : '' }}">Jelajahi</a>
       <a href="{{ url('/search') }}" class="{{ request()->is('search*') ? 'active' : '' }}">Pencarian</a>
+            <a href="{{ route('chatbot.index') }}" class="{{ request()->routeIs('chatbot.*') ? 'active' : '' }}">Sipora AI</a>
             @if($isAdmin)
                 <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'active' : '' }}">Admin</a>
             @endif

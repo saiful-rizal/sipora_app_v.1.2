@@ -60,6 +60,47 @@
             </div>
         </div>
 
+        <div class="section-header">
+            <h5>Top 10 Paling Banyak Dibaca</h5>
+        </div>
+
+        @if(($topReadDocuments ?? collect())->isEmpty())
+            <div class="empty-state mb-4">
+                <div class="empty-state-card py-4">
+                    <div class="empty-state-icon">
+                        <i class="bi bi-bar-chart"></i>
+                    </div>
+                    <p class="empty-state-description mb-0">Belum ada data bacaan untuk ditampilkan.</p>
+                </div>
+            </div>
+        @else
+            <div class="top-read-card">
+                <div class="top-read-list">
+                    @foreach($topReadDocuments as $index => $topDoc)
+                        <div class="top-read-item">
+                            <div class="top-read-rank">{{ $index + 1 }}</div>
+                            <div class="top-read-content">
+                                <div class="top-read-title">{{ $topDoc->judul }}</div>
+                                <div class="top-read-meta">
+                                    <span class="badge bg-light text-dark">{{ ucwords(str_replace('_', ' ', $topDoc->jenis_dokumen ?? 'dokumen')) }}</span>
+                                    @if(!empty($topDoc->nama_jurusan))
+                                        <span>{{ $topDoc->nama_jurusan }}</span>
+                                    @endif
+                                    @if(!empty($topDoc->tahun))
+                                        <span>{{ $topDoc->tahun }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="top-read-count">
+                                <i class="bi bi-eye"></i>
+                                <strong>{{ (int) ($topDoc->view_count ?? 0) }}</strong>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         @if($documents->isEmpty())
             <div class="empty-state">
                 <div class="empty-state-card">

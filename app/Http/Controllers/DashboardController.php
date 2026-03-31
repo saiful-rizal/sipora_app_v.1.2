@@ -71,11 +71,29 @@ class DashboardController extends Controller
 
         $persentasePenggunaan = $totalDokumen > 0 ? round(($uploadBaru / $totalDokumen) * 100, 1) : 0;
 
+        $topReadDocuments = DB::table('dokumen as d')
+            ->leftJoin('master_jurusan as j', 'd.id_jurusan', '=', 'j.id_jurusan')
+            ->leftJoin('master_tahun as y', 'd.year_id', '=', 'y.year_id')
+            ->where('d.status_id', 5)
+            ->orderByDesc('d.view_count')
+            ->orderByDesc('d.tgl_unggah')
+            ->limit(10)
+            ->select([
+                'd.dokumen_id',
+                'd.judul',
+                'd.view_count',
+                'd.jenis_dokumen',
+                'j.nama_jurusan',
+                'y.tahun',
+            ])
+            ->get();
+
         return view('dashboard', [
             'documents' => $documents,
             'totalDokumen' => $totalDokumen,
             'uploadBaru' => $uploadBaru,
             'persentasePenggunaan' => $persentasePenggunaan,
+            'topReadDocuments' => $topReadDocuments,
             'user' => $user,
         ]);
     }
@@ -120,6 +138,12 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Document not found'], 404);
         }
 
+        DB::table('dokumen')
+            ->where('dokumen_id', $document->dokumen_id)
+            ->increment('view_count');
+
+        $document->view_count = (int) ($document->view_count ?? 0) + 1;
+
         $filePath = (string) ($document->file_path ?? '');
         $fileName = basename($filePath);
         $filePublicPath = public_path('uploads/documents/' . $fileName);
@@ -151,6 +175,8 @@ class DashboardController extends Controller
                 'status_badge' => $this->mapStatusBadge((int) ($document->status_id ?? 0)),
                 'turnitin' => $document->turnitin,
                 'turnitin_file' => $document->turnitin_file,
+                'view_count' => $document->view_count,
+                'jenis_dokumen' => $document->jenis_dokumen,
                 'kata_kunci' => $document->kata_kunci,
                 'keywords' => $keywords,
                 'id_divisi' => $document->id_divisi,

@@ -99,6 +99,12 @@ class BrowserController extends Controller
             return response()->json(['success' => false, 'message' => 'Document not found'], 404);
         }
 
+        DB::table('dokumen')
+            ->where('dokumen_id', $document->dokumen_id)
+            ->increment('view_count');
+
+        $document->view_count = (int) ($document->view_count ?? 0) + 1;
+
         return response()->json([
             'success' => true,
             'document' => $this->mapDocument($document),
@@ -133,6 +139,8 @@ class BrowserController extends Controller
             'status_id' => $doc->status_id,
             'turnitin' => $doc->turnitin,
             'turnitin_file' => $doc->turnitin_file,
+            'view_count' => (int) ($doc->view_count ?? 0),
+            'jenis_dokumen' => $doc->jenis_dokumen,
             'kata_kunci' => $doc->kata_kunci,
             'keywords' => $keywords,
             'id_divisi' => $doc->id_divisi,
