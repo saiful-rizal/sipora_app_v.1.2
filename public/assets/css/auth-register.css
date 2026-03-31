@@ -30,3 +30,7 @@ body { font-family:"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Robot
 .register-success-overlay.show{opacity:1;pointer-events:auto;} .register-success-card{background:#fff;padding:28px 30px;border-radius:12px;max-width:520px;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center;} .register-success-card h2{margin-bottom:8px;color:var(--primary-blue);} .register-success-card p{color:var(--text-secondary);margin-bottom:18px;} .register-success-actions{display:flex;gap:10px;justify-content:center;} .register-success-actions .btn{padding:10px 16px;border-radius:8px;border:0;cursor:pointer;}
 @media (max-width:768px){.register-card{flex-direction:column;max-width:400px}.register-card-left{padding:40px 30px;min-height:250px}.logo-circle{width:80px;height:80px}.logo-circle img{width:50px}.register-card-left h1{font-size:22px}.register-card-left p{font-size:14px}.register-card-right{padding:40px 30px;max-height:500px}}
 @media (max-width:576px){body{padding:15px}.register-card-left,.register-card-right{padding:30px 20px}}
+
+/* Hide native Edge/IE reveal button to avoid double eye icon */
+.password-input-container input[type="password"]::-ms-reveal,
+.password-input-container input[type="password"]::-ms-clear{display:none}
