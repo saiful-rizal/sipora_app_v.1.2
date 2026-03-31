@@ -2,7 +2,7 @@
 
 @section('title', 'Data Jurusan')
 @section('page_label', 'Jurusan')
-
+@section('search_target','#table-jurusan')
 @section('content')
 
 {{-- HEADER --}}
@@ -30,8 +30,7 @@
 
     {{-- TABLE --}}
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
-
+    <table id="table-jurusan" class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
                     <th>ID</th>

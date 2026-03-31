@@ -183,7 +183,19 @@ class AdminMasterDataController extends Controller
     return redirect()->route('admin.users.index')
         ->with('success', 'Data user berhasil diperbarui 🚀');
 }
+public function deleteUser($id)
+{
+    $user = \App\Models\User::findOrFail($id);
 
+    // optional: keamanan tambahan
+    if ($user->status !== 'rejected') {
+        return back()->with('error', 'Hanya user rejected yang bisa dihapus');
+    }
+
+    $user->delete();
+
+    return back()->with('success', 'User berhasil dihapus');
+}
     public function updateJurusan(Request $request, int $id): RedirectResponse
     {
         if ($redirect = $this->ensureAdmin($request)) {

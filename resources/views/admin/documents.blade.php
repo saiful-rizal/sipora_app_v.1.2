@@ -2,7 +2,7 @@
 
 @section('title','Dokumen')
 @section('page_label','Dokumen')
-
+@section('search_target','#table-documents')
 @section('content')
 
 <div class="admin-header mb-4">

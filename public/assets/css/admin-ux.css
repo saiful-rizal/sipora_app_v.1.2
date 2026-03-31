@@ -278,7 +278,7 @@ body {
 .search-topbar input {
     border: none;
     outline: none;
-    width: 200px;
+    width: 500px;
 }
 
 /* BUTTON */
@@ -350,4 +350,109 @@ body {
 .overlay.show {
     opacity: 1;
     visibility: visible;
+}
+.menu-group {
+    margin-bottom: 8px;
+}
+
+.menu-toggle {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 10px 14px;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.menu-toggle.active {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+}
+
+.submenu {
+    display: block;
+    padding: 8px 40px;
+    font-size: 14px;
+    color: #94a3b8;
+    text-decoration: none;
+}
+
+.submenu:hover {
+    color: white;
+}
+
+.submenu.active {
+    color: white;
+    font-weight: 600;
+}
+/* ===== SIDEBAR GROUP ===== */
+.menu-group {
+    margin-bottom: 4px;
+}
+
+/* SAMAIN KAYAK <a> */
+.menu-toggle {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    border-radius: 10px;
+    transition: 0.2s;
+}
+
+/* HOVER EFFECT */
+.menu-toggle:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+/* ACTIVE */
+.menu-toggle.active {
+    background: rgba(255,255,255,0.12);
+}
+
+/* SUBMENU */
+.submenu {
+    display: block;
+    padding: 8px 40px;
+    font-size: 14px;
+    color: #9ca3af;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+/* HOVER */
+.submenu:hover {
+    color: #fff;
+}
+
+/* ACTIVE */
+.submenu.active {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ICON RAPihin */
+.menu-toggle i:first-child {
+    width: 20px;
+}
+
+/* CHEVRON KANAN */
+.menu-toggle i:last-child {
+    margin-left: auto;
+    font-size: 12px;
+}
+.menu-toggle .bi-chevron-down {
+    transition: 0.3s;
+}
+
+.menu-toggle[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
 }

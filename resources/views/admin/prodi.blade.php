@@ -2,7 +2,7 @@
 
 @section('title','Data Prodi')
 @section('page_label','Prodi')
-
+@section('search_target','#table-prodi')
 @section('content')
 
 {{-- HEADER --}}
@@ -33,8 +33,7 @@
 
     {{-- TABLE --}}
     <div class="table-responsive">
-        <table class="table table-hover align-middle" id="table-prodi">
-
+    <table id="table-prodi" class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
                     <th>ID</th>

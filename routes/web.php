@@ -89,6 +89,20 @@ Route::middleware(['session.auth'])->prefix('admin')->name('admin.')->group(func
     Route::post('/users/store-admin', [AdminMasterDataController::class, 'storeAdmin'])
     ->name('users.store-admin');
 
+Route::get('/users/report', function () {
+    return view('admin.users_report', [
+        'activeMenu' => 'users_report',
+        'displayName' => session('auth_user.nama_lengkap') ?? 'Admin',
+    ]);
+})->name('users.report');
+Route::delete('/users/{id}', [AdminMasterDataController::class, 'deleteUser'])
+    ->name('users.delete');
+Route::get('/documents/report', function () {
+    return view('admin.documents_report', [
+        'activeMenu' => 'documents_report',
+        'displayName' => session('auth_user.nama_lengkap') ?? 'Admin',
+    ]);
+})->name('documents.report');
     Route::get('/profile', [AdminMasterDataController::class, 'profile'])
     ->name('profile');
 

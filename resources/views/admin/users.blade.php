@@ -86,8 +86,7 @@
 
     {{-- TABLE --}}
     <div class="table-responsive">
-        <table class="table table-hover align-middle" id="table-users">
-
+<table id="table-users" class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
                     <th>ID</th>
@@ -115,28 +114,39 @@
     <td>{{ $item->email }}</td>
     <td>{{ $item->nim ?: '-' }}</td>
 
-    <td colspan="3"> <!-- role + status + tombol save -->
-        <form action="{{ route('admin.users.update',$item->id_user) }}" method="POST" class="d-flex align-items-center gap-2">
-            @csrf
-            @method('PUT')
+    <td colspan="3">
+    <form action="{{ route('admin.users.update',$item->id_user) }}" method="POST" class="d-flex align-items-center gap-2">
+    @csrf
+    @method('PUT')
 
-            <select name="role" class="form-select form-select-sm" style="width:120px" {{ $isSuperAdmin ? '' : 'disabled' }}>
-                <option value="superadmin" {{ $item->role=='superadmin'?'selected':'' }}>Super Admin</option>
-                <option value="admin" {{ $item->role=='admin'?'selected':'' }}>Admin</option>
-                <option value="mahasiswa" {{ $item->role=='mahasiswa'?'selected':'' }}>Mahasiswa</option>
-            </select>
+    <select name="role" class="form-select form-select-sm" style="width:120px" {{ $isSuperAdmin ? '' : 'disabled' }}>
+        <option value="superadmin" {{ $item->role=='superadmin'?'selected':'' }}>Super Admin</option>
+        <option value="admin" {{ $item->role=='admin'?'selected':'' }}>Admin</option>
+        <option value="mahasiswa" {{ $item->role=='mahasiswa'?'selected':'' }}>Mahasiswa</option>
+    </select>
 
-            <select name="status" class="form-select form-select-sm" style="width:120px" {{ $lockedByRole?'disabled':'' }}>
-                <option value="pending" {{ $item->status=='pending'?'selected':'' }}>Pending</option>
-                <option value="approved" {{ $item->status=='approved'?'selected':'' }}>Approved</option>
-                <option value="rejected" {{ $item->status=='rejected'?'selected':'' }}>Rejected</option>
-            </select>
+    <select name="status" class="form-select form-select-sm" style="width:120px" {{ $lockedByRole?'disabled':'' }}>
+        <option value="pending" {{ $item->status=='pending'?'selected':'' }}>Pending</option>
+        <option value="approved" {{ $item->status=='approved'?'selected':'' }}>Approved</option>
+        <option value="rejected" {{ $item->status=='rejected'?'selected':'' }}>Rejected</option>
+    </select>
 
-            <button type="button" class="btn btn-sm btn-outline-primary btn-save" {{ $lockedByRole?'disabled':'' }}>
-                <i class="bi bi-save"></i>
-            </button>
-        </form>
-    </td>
+    <!-- SAVE -->
+    <button type="button" class="btn btn-sm btn-outline-primary btn-save" {{ $lockedByRole?'disabled':'' }}>
+        <i class="bi bi-save"></i>
+    </button>
+
+    <!-- DELETE (SEJAJAR) -->
+    @if($item->status === 'rejected')
+       <button type="button"
+    class="btn btn-sm btn-outline-danger btn-delete"
+    data-id="{{ $item->id_user }}">
+            <i class="bi bi-trash"></i>
+        </button>
+    @endif
+</form>
+
+</td>
 </tr>
 
                 @empty
@@ -220,6 +230,36 @@
         </div>
     </div>
 </div>
+<!-- ===== MODAL DELETE ===== -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h6 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Hapus User
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                Yakin mau menghapus user ini? <br>
+                <small class="text-muted">Data tidak bisa dikembalikan.</small>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    Ya, Hapus
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
  
 @endsection
 
@@ -267,7 +307,26 @@ document.addEventListener('DOMContentLoaded', function(){
     document.querySelectorAll('.btn-save').forEach(btn => {
         btn.addEventListener('click', function(){
 
-            selectedForm = this.closest('form');
+         selectedDeleteForm = document.createElement('form');
+selectedDeleteForm.method = 'POST';
+selectedDeleteForm.action = `/admin/users/${this.dataset.id}`;
+
+// CSRF
+let csrf = document.createElement('input');
+csrf.type = 'hidden';
+csrf.name = '_token';
+csrf.value = '{{ csrf_token() }}';
+
+// METHOD DELETE
+let method = document.createElement('input');
+method.type = 'hidden';
+method.name = '_method';
+method.value = 'DELETE';
+
+selectedDeleteForm.appendChild(csrf);
+selectedDeleteForm.appendChild(method);
+
+document.body.appendChild(selectedDeleteForm);
 
             modal.show();
         });
@@ -291,7 +350,63 @@ function closeSlide(){
     document.getElementById('slidePanel')?.classList.remove('open');
     document.getElementById('overlay')?.classList.remove('show');
 }
+document.addEventListener('DOMContentLoaded', function(){
 
+    let selectedForm = null;
+    const saveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+    const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    let selectedDeleteForm = null;
+
+    // SAVE BUTTON
+    document.querySelectorAll('.btn-save').forEach(btn => {
+        btn.addEventListener('click', function(){
+            selectedForm = this.closest('form');
+            saveModal.show();
+        });
+    });
+
+    document.getElementById('confirmSaveBtn').addEventListener('click', function(){
+        if(selectedForm){
+            selectedForm.submit();
+        }
+    });
+
+    // DELETE BUTTON
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(){
+            // buat form DELETE sementara
+            selectedDeleteForm = document.createElement('form');
+            selectedDeleteForm.method = 'POST';
+            selectedDeleteForm.action = `/admin/users/${this.dataset.id}`;
+
+            // CSRF
+            let csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+
+            // METHOD DELETE
+            let method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+
+            selectedDeleteForm.appendChild(csrf);
+            selectedDeleteForm.appendChild(method);
+
+            document.body.appendChild(selectedDeleteForm);
+
+            deleteModal.show();
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function(){
+        if(selectedDeleteForm){
+            selectedDeleteForm.submit();
+        }
+    });
+
+});
 </script>
 
 @endpush

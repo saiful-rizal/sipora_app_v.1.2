@@ -20,18 +20,13 @@
 <!-- SIDEBAR -->
 <div class="sidebar">
     <div class="brand d-flex gap-2 mb-4 align-items-center">
-
         <img src="{{ asset('assets/logo.png') }}"
              style="height:40px; width:auto; object-fit:contain;">
-
-        <div>
-            <strong>SIPORA</strong><br>
-            <small>Admin Panel</small>
-        </div>
+      
     </div>
 
     <a href="{{ route('admin.dashboard') }}" class="{{ $activeMenu=='dashboard'?'active':'' }}">
-        <i class="bi bi-grid"></i> Dashboard
+        <i class="bi bi-grid"></i> Beranda
     </a>
 
     <a href="{{ route('admin.jurusan.index') }}" class="{{ $activeMenu=='jurusan'?'active':'' }}">
@@ -46,17 +41,60 @@
         <i class="bi bi-bookmarks"></i> Tema
     </a>
 
-    <a href="{{ route('admin.documents.index') }}" class="{{ $activeMenu=='documents'?'active':'' }}">
-    <i class="bi bi-file-earmark-text"></i> Dokumen
-</a>
+   <!-- DOKUMEN -->
+<div class="menu-group">
 
-    <a href="{{ route('admin.users.index') }}" class="{{ $activeMenu=='users'?'active':'' }}">
-        <i class="bi bi-people"></i> User
-    </a>
+    <button class="menu-toggle {{ str_contains($activeMenu,'documents') ? 'active' : '' }}"
+            data-bs-toggle="collapse"
+            data-bs-target="#menuDokumen">
+
+        <i class="bi bi-file-earmark-text"></i> Dokumen
+         <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <div id="menuDokumen" class="collapse {{ str_contains($activeMenu,'documents') ? 'show' : '' }}">
+
+        <a href="{{ route('admin.documents.index') }}"
+           class="submenu {{ $activeMenu=='documents'?'active':'' }}">
+            Manajemen Data
+        </a>
+
+        <a href="{{ route('admin.documents.report') }}"
+           class="submenu {{ $activeMenu=='documents_report'?'active':'' }}">
+            Laporan 
+        </a>
+
+    </div>
+</div>
+
+<!-- USER -->
+<div class="menu-group">
+
+    <button class="menu-toggle {{ str_contains($activeMenu,'users') ? 'active' : '' }}"
+            data-bs-toggle="collapse"
+            data-bs-target="#menuUser">
+
+        <i class="bi bi-people"></i> Pengguna
+       <i class="bi bi-chevron-down ms-auto"></i>
+    </button>
+
+    <div id="menuUser" class="collapse {{ str_contains($activeMenu,'users') ? 'show' : '' }}">
+
+        <a href="{{ route('admin.users.index') }}"
+           class="submenu {{ $activeMenu=='users'?'active':'' }}">
+            Manajemen Data
+        </a>
+
+        <a href="{{ route('admin.users.report') }}"
+           class="submenu {{ $activeMenu=='users_report'?'active':'' }}">
+            Laporan
+        </a>
+
+    </div>
+</div>
 
     <hr>
 
-    <!-- LOGOUT BUTTON (trigger modal) -->
     <button class="btn btn-outline-danger w-100 mt-2"
             data-bs-toggle="modal"
             data-bs-target="#logoutModal">
@@ -77,45 +115,36 @@
             <!-- SEARCH -->
             <div class="search-topbar">
                 <i class="bi bi-search"></i>
-                <input type="text" id="globalSearch" placeholder="Cari data..."
-                       data-table-target="@yield('search_target')">
+                <input type="text" id="globalSearch" placeholder="Masukkan kata kunci dan tekan spasi untuk mencari...">
             </div>
 
-          <div class="dropdown">
+            <div class="dropdown">
+                <div class="avatar dropdown-toggle"
+                     data-bs-toggle="dropdown"
+                     style="cursor:pointer;">
+                    {{ strtoupper(substr($displayName ?? 'A',0,1)) }}
+                </div>
 
-    <div class="avatar dropdown-toggle"
-         data-bs-toggle="dropdown"
-         style="cursor:pointer;">
-        {{ strtoupper(substr($displayName ?? 'A',0,1)) }}
-    </div>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
+                     style="width:240px; border-radius:16px;">
 
-    <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
-         style="width:240px; border-radius:16px;">
+                    <div class="mb-3">
+                        <strong>{{ $displayName }}</strong><br>
+                        <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
+                    </div>
 
-        <!-- USER INFO -->
-        <div class="mb-3">
-            <strong>{{ $displayName }}</strong><br>
-            <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
-        </div>
+                    <hr class="my-2">
 
-        <hr class="my-2">
+                    <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
+                        <i class="bi bi-person"></i> Profile
+                    </a>
 
-        <!-- MENU -->
-        <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
-            <i class="bi bi-person"></i> Profile
-        </a>
+                    <a href="#" class="dropdown-item d-flex align-items-center gap-2">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
 
-        <a href="#" class="dropdown-item d-flex align-items-center gap-2">
-            <i class="bi bi-gear"></i> Settings
-        </a>
-
-        <hr class="my-2">
-
-    
-
-    </div>
-
-</div>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -125,11 +154,7 @@
     </div>
 </div>
 
-<!-- OVERLAY -->
-<div id="overlay" class="overlay" onclick="closeSlide()"></div>
-
-
-<!-- ================= MODAL LOGOUT ================= -->
+<!-- MODAL LOGOUT -->
 <div class="modal fade" id="logoutModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -148,7 +173,6 @@
                     Batal
                 </button>
 
-                <!-- FORM LOGOUT REAL -->
                 <form method="POST" action="{{ route('auth.logout') }}">
                     @csrf
                     <button class="btn btn-danger">
@@ -161,44 +185,42 @@
     </div>
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-/* ===== GLOBAL SEARCH ===== */
-document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('globalSearch');
+document.addEventListener("DOMContentLoaded", function () {
 
-    if (input) {
-        input.addEventListener('keyup', function () {
-            const keyword = input.value.toLowerCase();
-            const target = input.dataset.tableTarget;
+    const searchInput = document.getElementById("globalSearch");
 
-            if (!target) return;
+    searchInput.addEventListener("keyup", function () {
 
-            document.querySelectorAll(`${target} tbody tr`).forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(keyword) ? '' : 'none';
+        const keyword = this.value.toLowerCase();
+        const rows = document.querySelectorAll("tbody tr");
+
+        rows.forEach(row => {
+
+            let text = row.innerText.toLowerCase();
+
+            row.querySelectorAll("input").forEach(input => {
+                text += " " + input.value.toLowerCase();
             });
+
+            row.querySelectorAll("select").forEach(select => {
+                text += " " + select.options[select.selectedIndex].text.toLowerCase();
+            });
+
+            if (text.includes(keyword)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+
         });
-    }
 
-    /* TOAST */
-    const toastEl = document.getElementById('liveToast');
-    if (toastEl) {
-        new bootstrap.Toast(toastEl).show();
-    }
+    });
+
 });
-
-/* SLIDE */
-function openSlide(){
-    document.getElementById('slidePanel')?.classList.add('open');
-}
-function closeSlide(){
-    document.getElementById('slidePanel')?.classList.remove('open');
-}
 </script>
-
 @stack('scripts')
-
 </body>
 </html>
