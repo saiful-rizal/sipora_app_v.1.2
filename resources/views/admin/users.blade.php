@@ -84,7 +84,51 @@
 
     </div>
 
-    {{-- TABLE --}}
+    {{-- TABLE SUPER ADMIN (ID 1) --}}
+    <div class="mb-4">
+        <h6 class="fw-semibold mb-2">Super Admin Utama (ID 1)</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>NIM</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if($superAdminUser)
+                        <tr>
+                            <td>{{ $superAdminUser->id_user }}</td>
+                            <td>{{ $superAdminUser->nama_lengkap }}</td>
+                            <td>{{ $superAdminUser->username }}</td>
+                            <td>{{ $superAdminUser->email }}</td>
+                            <td>{{ $superAdminUser->nim ?: '-' }}</td>
+                            <td><span class="badge bg-danger">Super Admin</span></td>
+                            <td><span class="badge bg-success">{{ ucfirst($superAdminUser->status) }}</span></td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">Terlindungi</span>
+                            </td>
+                        </tr>
+                    @else
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">
+                                Data Super Admin utama (ID 1) tidak ditemukan
+                            </td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- TABLE ADMIN/PENGGUNA ID >= 2 --}}
+    <h6 class="fw-semibold mb-2">Data Pengguna ID 2 dan Seterusnya</h6>
     <div class="table-responsive">
 <table id="table-users" class="table table-hover align-middle">
             <thead class="table-light">
@@ -101,7 +145,7 @@
             </thead>
 
             <tbody>
-                @forelse($users as $item)
+                @forelse($regularUsers as $item)
                     @php
                         $lockedByRole = !$isSuperAdmin && in_array((string)$item->role, ['admin','superadmin'], true);
                     @endphp
