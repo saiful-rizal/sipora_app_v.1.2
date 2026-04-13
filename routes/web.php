@@ -13,20 +13,9 @@ use App\Http\Controllers\AdminMasterDataController;
 use App\Http\Controllers\AdminDokumenController;
 use Illuminate\Support\Facades\Auth;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-
 Route::redirect('/', '/dashboard');
 
-// ── AUTH ROUTES (tidak perlu login) ───────────────────────────────────────
+// ── AUTH ROUTES ───────────────────────────────────────────────────────────
 Route::redirect('/auth', '/login');
 Route::get('/login',  [AuthPageController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthPageController::class, 'login'])->name('login.submit');
@@ -47,27 +36,22 @@ Route::post('/auth/check-user-exists', [AuthPageController::class, 'checkUserExi
 Route::post('/auth/google-auth',       [AuthPageController::class, 'googleAuth'])->name('auth.google');
 Route::post('/auth/logout',            [AuthPageController::class, 'logout'])->name('auth.logout');
 
-// ── USER ROUTES (session.auth, tanpa prefix) ──────────────────────────────
+// ── USER ROUTES ───────────────────────────────────────────────────────────
 Route::middleware(['session.auth'])->group(function () {
-    // Dashboard
     Route::get('/dashboard',        [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/detail', [DashboardController::class, 'getDetail'])->name('dashboard.get-detail');
 
-    // Upload
     Route::get('/upload',       [UploadController::class, 'index'])->name('upload.index');
     Route::post('/upload',      [UploadController::class, 'store'])->name('upload.store');
     Route::get('/upload/prodi', [UploadController::class, 'getProdi'])->name('upload.get-prodi');
 
-    // Browser
     Route::get('/browser',        [BrowserController::class, 'index'])->name('browser.index');
     Route::get('/browser/detail', [BrowserController::class, 'getDetail'])->name('browser.get-detail');
     Route::get('/browser/prodi',  [BrowserController::class, 'getProdi'])->name('browser.get-prodi');
 
-    // Search
     Route::get('/search',        [SearchController::class, 'index'])->name('search.index');
     Route::get('/search/detail', [SearchController::class, 'getDetail'])->name('search.get-detail');
 
-    // Document Management
     Route::get('/documents/my',              [DocumentManagementController::class, 'myDocuments'])->name('documents.my');
     Route::get('/documents/history',         [DocumentManagementController::class, 'uploadHistory'])->name('documents.history');
     Route::get('/documents/history/export',  [DocumentExtraController::class, 'exportHistory'])->name('documents.history.export');
@@ -78,13 +62,12 @@ Route::middleware(['session.auth'])->group(function () {
     Route::delete('/documents/{id}',         [DocumentManagementController::class, 'deleteDocument'])->name('documents.delete');
 });
 
-// ── ADMIN ROUTES (session.auth, prefix /admin) ────────────────────────────
+// ── ADMIN ROUTES ──────────────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(function () {
-    // Dashboard
-    Route::get('/dashboard', [AdminMasterDataController::class, 'dashboard'])->name('dashboard');
+
+    Route::get('/dashboard',   [AdminMasterDataController::class, 'dashboard'])->name('dashboard');
     Route::get('/master-data', fn () => redirect()->route('admin.dashboard'))->name('master-data');
 
-    // Master Data
     Route::get('/jurusan', [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
     Route::get('/prodi',   [AdminMasterDataController::class, 'prodiIndex'])->name('prodi.index');
     Route::get('/tema',    [AdminMasterDataController::class, 'temaIndex'])->name('tema.index');
@@ -95,10 +78,7 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::delete('/users/{id}',      [AdminMasterDataController::class, 'deleteUser'])->name('users.delete');
 
     Route::get('/users/report', function () {
-        return view('admin.users_report', [
-            'activeMenu'  => 'users_report',
-            'displayName' => session('auth_user.nama_lengkap') ?? 'Admin',
-        ]);
+        return view('admin.users_report', ['activeMenu' => 'users_report']);
     })->name('users.report');
 
     Route::put('/jurusan/{id}',    [AdminMasterDataController::class, 'updateJurusan'])->name('jurusan.update');
@@ -110,27 +90,20 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::put('/tema/{id}',    [AdminMasterDataController::class, 'updateTema'])->name('tema.update');
     Route::delete('/tema/{id}', [AdminMasterDataController::class, 'deleteTema'])->name('tema.delete');
 
-    // Profile
     Route::get('/profile',           [AdminMasterDataController::class, 'profile'])->name('profile');
     Route::post('/profile/update',   [AdminMasterDataController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/password', [AdminMasterDataController::class, 'updatePassword'])->name('profile.password');
 
-    // ── Dokumen Admin ──────────────────────────────────────────────────────
+    // ── Dokumen ──────────────────────────────────────────────────────────
     Route::get('/documents',                 [AdminDokumenController::class, 'index'])->name('documents.index');
+    Route::get('/documents/report',          [AdminDokumenController::class, 'report'])->name('documents.report'); // ← PINDAH KE ATAS
     Route::get('/documents/{id}/detail',     [AdminDokumenController::class, 'detail'])->name('dokumen.detail');
     Route::put('/documents/{id}/approve',    [AdminDokumenController::class, 'approve'])->name('dokumen.approve');
     Route::put('/documents/{id}/reject',     [AdminDokumenController::class, 'reject'])->name('dokumen.reject');
     Route::put('/documents/{id}/revoke',     [AdminDokumenController::class, 'revoke'])->name('dokumen.revoke');
     Route::delete('/documents/{id}/destroy', [AdminDokumenController::class, 'destroy'])->name('dokumen.destroy');
-    // ──────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
-    // Report Views
-    Route::get('/documents/report', function () {
-        return view('admin.documents_report', [
-            'activeMenu'  => 'documents_report',
-            'displayName' => session('auth_user.nama_lengkap') ?? 'Admin',
-        ]);
-    })->name('documents.report');
 });
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────
