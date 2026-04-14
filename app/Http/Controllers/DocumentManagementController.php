@@ -34,45 +34,6 @@ class DocumentManagementController extends Controller
         ]);
     }
 
-    public function deleteDocument(Request $request, int $id): RedirectResponse
-    {
-        $user = $this->sessionUser($request);
-        if (!$user) {
-            return redirect()->route('login')->with('login_error', 'Silakan login terlebih dahulu.');
-        }
-
-        $document = DB::table('dokumen')
-            ->where('dokumen_id', $id)
-            ->where('uploader_id', $user['id_user'])
-            ->first();
-
-        if (!$document) {
-            return back()->withErrors(['delete_error' => 'Dokumen tidak ditemukan atau tidak memiliki izin.']);
-        }
-
-        DB::beginTransaction();
-        try {
-            DB::table('document_screenings')->where('dokumen_id', $id)->delete();
-            DB::table('dokumen')->where('dokumen_id', $id)->delete();
-
-            $filePath = public_path('uploads/documents/' . basename((string) ($document->file_path ?? '')));
-            if (is_file($filePath)) {
-                @unlink($filePath);
-            }
-
-            $turnitinPath = public_path('uploads/turnitin/' . basename((string) ($document->turnitin_file ?? '')));
-            if (!empty($document->turnitin_file) && is_file($turnitinPath)) {
-                @unlink($turnitinPath);
-            }
-
-            DB::commit();
-            return redirect()->route('documents.my')->with('delete_success', true);
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            return back()->withErrors(['delete_error' => 'Gagal menghapus dokumen: ' . $e->getMessage()]);
-        }
-    }
-
     public function uploadHistory(Request $request): View|RedirectResponse
     {
         $user = $this->sessionUser($request);

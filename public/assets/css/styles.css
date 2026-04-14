@@ -3082,6 +3082,50 @@ footer {
   padding: 0 20px;
 }
 
+.search-hero {
+  max-width: 1100px;
+  margin: 20px auto 18px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, rgba(26, 86, 214, .95) 0%, rgba(17, 90, 147, .95) 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 36px rgba(14, 55, 125, .2);
+  padding: 18px 20px;
+}
+
+.search-hero-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.search-hero h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.search-hero p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  max-width: 520px;
+}
+
+.search-hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.search-hero-badges span {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
 .search-form-section {
   margin-bottom: 50px;
 }
@@ -3161,6 +3205,75 @@ footer {
 
 .search-button i {
   font-size: 16px;
+}
+
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  align-items: end;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.filter-item label {
+  font-weight: 600;
+  color: #344054;
+  margin-bottom: 4px;
+}
+
+.filter-item select {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.sort-item {
+  min-width: 155px;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-clear {
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.search-clear:hover {
+  background: #eef2ff;
+}
+
+.document-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 10px;
+}
+
+.meta-item {
+  font-size: 11px;
+  color: #4665a3;
+  background: rgba(56, 133, 253, 0.1);
+  border: 1px solid rgba(56, 133, 253, 0.25);
+  border-radius: 999px;
+  padding: 3px 8px;
 }
 
 /* Popular Keywords Section */

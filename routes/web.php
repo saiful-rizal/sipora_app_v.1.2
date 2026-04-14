@@ -75,7 +75,6 @@ Route::middleware(['session.auth'])->group(function () {
     Route::get('/documents/turnitin/export', [DocumentExtraController::class, 'exportTurnitin'])->name('documents.turnitin.export');
     Route::get('/documents/{id}/detail',     [DocumentExtraController::class, 'documentDetail'])->name('documents.detail');
     Route::get('/documents/{id}/download',   [DocumentExtraController::class, 'downloadDocument'])->name('documents.download');
-    Route::delete('/documents/{id}',         [DocumentManagementController::class, 'deleteDocument'])->name('documents.delete');
 });
 
 // ── ADMIN ROUTES (session.auth, prefix /admin) ────────────────────────────
