@@ -311,6 +311,41 @@ class AdminMasterDataController extends Controller
             ...$this->getAdminContext($request)
         ]);
     }
+    public function storeAdmin(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $actor = $request->session()->get('auth_user', []);
+
+        if (!$this->isSuperAdmin($actor['role'] ?? null)) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Hanya Super Admin yang dapat menambahkan admin');
+        }
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'max:100'],
+            'nim' => ['nullable', 'string', 'max:50'],
+            'email' => ['required', 'email', 'max:100', 'unique:users,email'],
+            'username' => ['required', 'string', 'max:50', 'unique:users,username'],
+            'password' => ['required', 'min:6', 'confirmed']
+        ]);
+
+        DB::table('users')->insert([
+            'nama_lengkap' => trim($validated['nama_lengkap']),
+            'nim' => $validated['nim'],
+            'email' => trim($validated['email']),
+            'username' => trim($validated['username']),
+            'password_hash' => password_hash($validated['password'], PASSWORD_BCRYPT),
+            'role' => 'admin',
+            'status' => 'approved',
+            'created_at' => now()
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Admin berhasil ditambahkan');
+    }
 
     public function updateUser(Request $request, int $id): RedirectResponse
     {

@@ -9,8 +9,8 @@ class StatusDokumen extends Model
 {
     use HasFactory;
 
-    protected $table = 'status_dokumen';
-    protected $primaryKey = 'id_status';
+    protected $table = 'master_status_dokumen';
+    protected $primaryKey = 'status_id';
     public $timestamps = false;
 
     protected $fillable = [
@@ -28,16 +28,16 @@ class StatusDokumen extends Model
 
     public function dokumen()
     {
-        return $this->hasMany(Dokumen::class, 'id_status', 'id_status');
+        return $this->hasMany(Dokumen::class, 'status_id', 'status_id');
     }
 
     public function logKajianSebelum()
     {
-        return $this->hasMany(LogKajian::class, 'id_status_sebelum', 'id_status');
+        return $this->hasMany(LogKajian::class, 'id_status_sebelum', 'status_id');
     }
 
     public function logKajianSesudah()
     {
-        return $this->hasMany(LogKajian::class, 'id_status_sesudah', 'id_status');
+        return $this->hasMany(LogKajian::class, 'id_status_sesudah', 'status_id');
     }
 }
