@@ -37,48 +37,34 @@
         </a>
 
 
-        <a href="{{ route('admin.jurusan.index') }}" class="{{ $activeMenu == 'jurusan' ? 'active' : '' }}">
-            <i class="bi bi-diagram-3"></i> Jurusan
+        <!-- MENU AKADEMIKA -->
+<div class="menu-group">
+
+    <button class="menu-toggle {{ str_contains($activeMenu, 'akademika') ? 'active' : '' }}"
+        data-bs-toggle="collapse" data-bs-target="#menuAkademika">
+
+        <i class="bi bi-mortarboard"></i> Manajemen Akademika
+        <i class="bi bi-chevron-down ms-auto"></i>
+
+    </button>
+
+    <div id="menuAkademika" class="collapse {{ str_contains($activeMenu, 'akademika') ? 'show' : '' }}">
+
+        <a href="{{ route('admin.jurusan.index') }}"
+            class="submenu {{ $activeMenu == 'jurusan' ? 'active' : '' }}">
+            Jurusan dan Prodi
         </a>
 
-
-        <a href="{{ route('admin.prodi.index') }}" class="{{ $activeMenu == 'prodi' ? 'active' : '' }}">
-            <i class="bi bi-mortarboard"></i> Prodi
+    
+        <a href="{{ route('admin.tema.index') }}"
+            class="submenu {{ $activeMenu == 'tema' ? 'active' : '' }}">
+            Tema dan Rumpun
         </a>
 
+    
+    </div>
 
-        <a href="{{ route('admin.tema.index') }}" class="{{ $activeMenu == 'tema' ? 'active' : '' }}">
-            <i class="bi bi-bookmarks"></i> Tema
-        </a>
-
-
-        <!-- MENU DOKUMEN -->
-        <div class="menu-group">
-
-            <button class="menu-toggle {{ str_contains($activeMenu, 'documents') ? 'active' : '' }}"
-                data-bs-toggle="collapse" data-bs-target="#menuDokumen">
-
-                <i class="bi bi-file-earmark-text"></i> Dokumen
-                <i class="bi bi-chevron-down ms-auto"></i>
-
-            </button>
-
-            <div id="menuDokumen" class="collapse {{ str_contains($activeMenu, 'documents') ? 'show' : '' }}">
-
-                <a href="{{ route('admin.documents.index') }}"
-                    class="submenu {{ $activeMenu == 'documents' ? 'active' : '' }}">
-                    Manajemen Data
-                </a>
-
-                <a href="{{ route('admin.documents.report') }}"
-                    class="submenu {{ $activeMenu == 'documents_report' ? 'active' : '' }}">
-                    Laporan
-                </a>
-
-            </div>
-
-        </div>
-
+</div>
 
         <!-- MENU USER -->
         <div class="menu-group">
@@ -99,6 +85,32 @@
 
                 <a href="{{ route('admin.users.report') }}"
                     class="submenu {{ $activeMenu == 'users_report' ? 'active' : '' }}">
+                    Laporan
+                </a>
+
+            </div>
+
+        </div>
+  <!-- MENU DOKUMEN -->
+        <div class="menu-group">
+
+            <button class="menu-toggle {{ str_contains($activeMenu, 'documents') ? 'active' : '' }}"
+                data-bs-toggle="collapse" data-bs-target="#menuDokumen">
+
+                <i class="bi bi-file-earmark-text"></i> Dokumen
+                <i class="bi bi-chevron-down ms-auto"></i>
+
+            </button>
+
+            <div id="menuDokumen" class="collapse {{ str_contains($activeMenu, 'documents') ? 'show' : '' }}">
+
+                <a href="{{ route('admin.documents.index') }}"
+                    class="submenu {{ $activeMenu == 'documents' ? 'active' : '' }}">
+                    Manajemen Data
+                </a>
+
+                <a href="{{ route('admin.documents.report') }}"
+                    class="submenu {{ $activeMenu == 'documents_report' ? 'active' : '' }}">
                     Laporan
                 </a>
 

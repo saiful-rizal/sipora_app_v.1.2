@@ -6,6 +6,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Exports\UserReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminMasterDataController extends Controller
 {
@@ -311,6 +314,74 @@ class AdminMasterDataController extends Controller
             ...$this->getAdminContext($request)
         ]);
     }
+    public function usersReport(Request $request): View|RedirectResponse|BinaryFileResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
+    }
+
+    $query = DB::table('users')
+        ->select(
+            'id_user',
+            'nama_lengkap',
+            'username',
+            'nim',
+            'email',
+            'role',
+            'status',
+            'created_at'
+        )
+        ->orderByDesc('created_at');
+
+    // FILTER ROLE
+    if ($request->role) {
+        $query->where('role', $request->role);
+    }
+
+    // FILTER TANGGAL
+    if ($request->tgl_dari) {
+        $query->whereDate('created_at', '>=', $request->tgl_dari);
+    }
+
+    if ($request->tgl_sampai) {
+        $query->whereDate('created_at', '<=', $request->tgl_sampai);
+    }
+
+    $users = $query->get(); // ✅ INI PENTING
+
+    // SUMMARY (opsional)
+    $summary = [
+        'total' => $users->count(),
+        'approved' => $users->where('status', 'approved')->count(),
+        'pending' => $users->where('status', 'pending')->count(),
+        'rejected' => $users->where('status', 'rejected')->count(),
+    ];
+
+    // ✅ EXPORT EXCEL
+    if ($request->export === 'excel') {
+
+        $admin = $request->session()->get('auth_user');
+
+        return Excel::download(
+            new UserReportExport(
+                $users,
+                $request->role ?? 'Semua',
+                $request->tgl_dari ?? '-',
+                $request->tgl_sampai ?? '-',
+                $admin['nama_lengkap'] ?? 'Admin'
+            ),
+            'laporan_user.xlsx'
+        );
+    }
+
+    // ✅ KIRIM KE VIEW
+    return view('admin.users_report', [
+        'users' => $users, // 🔥 INI YANG BIKIN ERROR KAMU HILANG
+        'summary' => $summary,
+        'activeMenu' => 'users_report',
+        ...$this->getAdminContext($request)
+    ]);
+}
     public function storeAdmin(Request $request): RedirectResponse
     {
         if ($redirect = $this->ensureAdmin($request)) {
