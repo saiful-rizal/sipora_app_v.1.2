@@ -59,7 +59,6 @@ Route::middleware(['session.auth'])->group(function () {
     Route::get('/documents/turnitin/export', [DocumentExtraController::class, 'exportTurnitin'])->name('documents.turnitin.export');
     Route::get('/documents/{id}/detail',     [DocumentExtraController::class, 'documentDetail'])->name('documents.detail');
     Route::get('/documents/{id}/download',   [DocumentExtraController::class, 'downloadDocument'])->name('documents.download');
-    Route::delete('/documents/{id}',         [DocumentManagementController::class, 'deleteDocument'])->name('documents.delete');
 });
 
 // ── ADMIN ROUTES ──────────────────────────────────────────────────────────
@@ -69,18 +68,16 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::get('/master-data', fn () => redirect()->route('admin.dashboard'))->name('master-data');
 
     Route::get('/jurusan', [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
-    Route::get('/prodi',   [AdminMasterDataController::class, 'prodiIndex'])->name('prodi.index');
     Route::get('/tema',    [AdminMasterDataController::class, 'temaIndex'])->name('tema.index');
+    Route::get('/users/report', [AdminMasterDataController::class, 'usersReport'])
+    ->name('users.report');
     Route::get('/users',   [AdminMasterDataController::class, 'usersIndex'])->name('users.index');
 
     Route::put('/users/{id}',         [AdminMasterDataController::class, 'updateUser'])->name('users.update');
     Route::post('/users/store-admin', [AdminMasterDataController::class, 'storeAdmin'])->name('users.store-admin');
     Route::delete('/users/{id}',      [AdminMasterDataController::class, 'deleteUser'])->name('users.delete');
 
-    Route::get('/users/report', function () {
-        return view('admin.users_report', ['activeMenu' => 'users_report']);
-    })->name('users.report');
-
+    
     Route::put('/jurusan/{id}',    [AdminMasterDataController::class, 'updateJurusan'])->name('jurusan.update');
     Route::delete('/jurusan/{id}', [AdminMasterDataController::class, 'deleteJurusan'])->name('jurusan.delete');
 

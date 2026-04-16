@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\MasterStatusDokumen;
 
 class LogKajian extends Model
 {
@@ -41,11 +42,11 @@ class LogKajian extends Model
 
     public function statusSebelum()
     {
-        return $this->belongsTo(StatusDokumen::class, 'id_status_sebelum', 'id_status');
+        return $this->belongsTo(MasterStatusDokumen::class, 'id_status_sebelum', 'status_id');
     }
 
     public function statusSesudah()
     {
-        return $this->belongsTo(StatusDokumen::class, 'id_status_sesudah', 'id_status');
+        return $this->belongsTo(MasterStatusDokumen::class, 'id_status_sesudah', 'status_id');
     }
 }
