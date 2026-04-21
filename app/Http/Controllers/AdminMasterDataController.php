@@ -9,6 +9,10 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\Exports\UserReportExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Mail\UserApproved;
+use App\Mail\UserRejected;
 
 class AdminMasterDataController extends Controller
 {
@@ -418,62 +422,95 @@ class AdminMasterDataController extends Controller
             ->with('success', 'Admin berhasil ditambahkan');
     }
 
-    public function updateUser(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        $actor = $request->session()->get('auth_user', []);
-        $isSuperAdmin = $this->isSuperAdmin($actor['role'] ?? null);
-
-        $target = DB::table('users')
-            ->where('id_user', $id)
-            ->first();
-
-        if (!$target) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'User tidak ditemukan');
-        }
-
-        if ((int) $target->id_user === 1) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'Akun Super Admin utama tidak dapat diubah');
-        }
-
-        $validated = $request->validate([
-            'status' => ['required', 'in:pending,approved,rejected'],
-            'role' => ['nullable', 'in:superadmin,admin,mahasiswa']
-        ]);
-
-        $updates = [
-            'status' => $validated['status']
-        ];
-
-        // hanya superadmin yang boleh ubah role
-        if ($isSuperAdmin && isset($validated['role'])) {
-
-            if ((int)($actor['id_user'] ?? 0) === $id && $validated['role'] !== 'superadmin') {
-                return redirect()->route('admin.users.index')
-                    ->with('error', 'Super Admin tidak dapat menurunkan role akun sendiri');
-            }
-
-            $updates['role'] = $validated['role'];
-        }
-
-        // admin biasa tidak boleh mengubah admin lain
-        if (!$isSuperAdmin && in_array($target->role, ['admin', 'superadmin'])) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'Admin tidak dapat mengubah akun admin lain');
-        }
-
-        DB::table('users')
-            ->where('id_user', $id)
-            ->update($updates);
-
-        return redirect()->route('admin.users.index')
-            ->with('success', 'Data user berhasil diperbarui');
+   public function updateUser(Request $request, int $id): RedirectResponse
+{
+    if ($redirect = $this->ensureAdmin($request)) {
+        return $redirect;
     }
+
+    $actor = $request->session()->get('auth_user', []);
+    $isSuperAdmin = $this->isSuperAdmin($actor['role'] ?? null);
+
+    $target = DB::table('users')
+        ->where('id_user', $id)
+        ->first();
+
+    if (!$target) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'User tidak ditemukan');
+    }
+
+    if ((int) $target->id_user === 1) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'Akun Super Admin utama tidak dapat diubah');
+    }
+
+    // ✅ VALIDASI
+    $validated = $request->validate([
+        'status' => ['required', 'in:pending,approved,rejected'],
+        'role' => ['nullable', 'in:superadmin,admin,mahasiswa'],
+        'alasan_reject' => ['nullable', 'required_if:status,rejected', 'max:1000']
+    ]);
+
+    $updates = [
+        'status' => $validated['status']
+    ];
+
+    // ✅ ROLE hanya superadmin
+    if ($isSuperAdmin && isset($validated['role'])) {
+
+        if ((int)($actor['id_user'] ?? 0) === $id && $validated['role'] !== 'superadmin') {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Super Admin tidak dapat menurunkan role akun sendiri');
+        }
+
+        $updates['role'] = $validated['role'];
+    }
+
+    // ✅ PROTEKSI ADMIN
+    if (!$isSuperAdmin && in_array($target->role, ['admin', 'superadmin'])) {
+        return redirect()->route('admin.users.index')
+            ->with('error', 'Admin tidak dapat mengubah akun admin lain');
+    }
+
+    // simpan status lama
+    $oldStatus = $target->status;
+
+    // update data
+    DB::table('users')
+        ->where('id_user', $id)
+        ->update($updates);
+
+    // ambil ulang user
+    $user = DB::table('users')->where('id_user', $id)->first();
+
+    // ✅ KIRIM EMAIL (AMAN)
+    if ($oldStatus !== $validated['status'] && $user->email) {
+
+        try {
+
+            if ($validated['status'] === 'approved') {
+
+                Mail::to($user->email)
+                    ->send(new UserApproved($user->nama_lengkap));
+
+            } elseif ($validated['status'] === 'rejected') {
+
+                Mail::to($user->email)
+                    ->send(new UserRejected(
+                        $user->nama_lengkap,
+                        $validated['alasan_reject']
+                    ));
+
+            }
+ } catch (\Throwable $e) {
+        Log::error($e->getMessage());
+    }
+    }
+
+    return redirect()->route('admin.users.index')
+        ->with('success', 'Data user berhasil diperbarui');
+}
     public function deleteUser(Request $request, int $id): RedirectResponse
     {
         if ($redirect = $this->ensureAdmin($request)) {

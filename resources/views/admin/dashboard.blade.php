@@ -79,11 +79,7 @@
                     </a>
                 </div>
 
-                <div class="col-md-3">
-                    <a href="{{ route('admin.prodi.index') }}" class="quick-btn">
-                        <i class="bi bi-mortarboard"></i> Prodi
-                    </a>
-                </div>
+               
 
                 <div class="col-md-3">
                     <a href="{{ route('admin.tema.index') }}" class="quick-btn">

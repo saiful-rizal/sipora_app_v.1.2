@@ -12,6 +12,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AdminMasterDataController;
 use App\Http\Controllers\AdminDokumenController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AdminNotificationController;
 
 Route::redirect('/', '/dashboard');
 
@@ -66,7 +67,9 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
 
     Route::get('/dashboard',   [AdminMasterDataController::class, 'dashboard'])->name('dashboard');
     Route::get('/master-data', fn () => redirect()->route('admin.dashboard'))->name('master-data');
-
+    Route::get('/notifications/latest', [AdminNotificationController::class,'getLatest']);
+Route::post('/notifications/read/{id}', [AdminNotificationController::class,'read']);
+Route::get('/notifications/count', [AdminNotificationController::class,'count']);
     Route::get('/jurusan', [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
     Route::get('/tema',    [AdminMasterDataController::class, 'temaIndex'])->name('tema.index');
     Route::get('/users/report', [AdminMasterDataController::class, 'usersReport'])
