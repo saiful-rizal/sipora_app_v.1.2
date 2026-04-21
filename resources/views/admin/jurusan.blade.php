@@ -1,108 +1,211 @@
 @extends('admin.layout')
 
-@section('title', 'Data Jurusan')
-@section('page_label', 'Jurusan')
-@section('search_target','#table-jurusan')
+@section('title', 'Data Jurusan & Prodi')
+@section('page_label', 'Jurusan & Prodi')
+
 @section('content')
 
-{{-- HEADER --}}
 <div class="mb-4">
-    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
-        Modul Jurusan
-    </span>
-    <h4 class="fw-bold mb-1">Data Jurusan</h4>
-    <small class="text-muted">
-        Kelola nama jurusan dan relasi rumpun
-    </small>
+    <h4 class="fw-bold">Data Jurusan & Prodi</h4>
 </div>
 
-<section class="admin-panel">
+@if(session('success'))
+<div class="alert alert-success">{{ session('success') }}</div>
+@endif
 
-    {{-- INFO --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#jurusan">Jurusan</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#prodi">Prodi</button>
+    </li>
+</ul>
 
-        <div class="info-chip">
-            <i class="bi bi-list-ul"></i>
-            {{ $jurusan->count() }} Data
+<div class="tab-content">
+
+{{-- ================= JURUSAN ================= --}}
+<div class="tab-pane fade show active" id="jurusan">
+
+    {{-- FORM TAMBAH --}}
+    <form action="{{ route('admin.jurusan.store') }}" method="POST" class="mb-3">
+        @csrf
+        <div class="d-flex gap-2">
+            <input type="text" name="nama_jurusan" class="form-control" placeholder="Nama jurusan" required>
+            <button class="btn btn-primary">Tambah</button>
         </div>
+    </form>
 
-    </div>
-
-    {{-- TABLE --}}
     <div class="table-responsive">
-    <table id="table-jurusan" class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>ID</th>
-                    <th>Nama Jurusan</th>
-                    <th>Rumpun</th>
-                    <th class="text-center">Aksi</th>
-                </tr>
-            </thead>
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Nama Jurusan</th>
+                <th>Jumlah Prodi</th>
+                <th class="text-center" width="120">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($jurusan as $item)
+            <tr>
 
-            <tbody>
-                @forelse($jurusan as $item)
-                <tr>
-                    <td>{{ $item->id_jurusan }}</td>
+                <form action="{{ route('admin.jurusan.update',$item->id_jurusan) }}" method="POST">
+                    @csrf
+                    @method('PUT')
 
-                    <td>
-                        <form action="{{ route('admin.jurusan.update', $item->id_jurusan) }}" method="POST">
-                            @csrf
-                            @method('PUT')
+                <td>
+                    <input type="text"
+                           name="nama_jurusan"
+                           value="{{ $item->nama_jurusan }}"
+                           class="form-control form-control-sm"
+                           id="jurusan-{{ $item->id_jurusan }}"
+                           disabled
+                           required>
+                </td>
 
-                            <input type="text"
-                                   name="nama_jurusan"
-                                   class="form-control form-control-sm"
-                                   value="{{ $item->nama_jurusan }}"
-                                   required>
-                    </td>
+                <td>
+                    {{ $item->total_prodi }}
+                </td>
 
-                    <td>
-                            <select name="id_rumpun" class="form-select form-select-sm">
-                                <option value="">-</option>
-                                @foreach($rumpun as $r)
-                                    <option value="{{ $r->id_rumpun }}"
-                                        {{ $item->id_rumpun == $r->id_rumpun ? 'selected' : '' }}>
-                                        {{ $r->nama_rumpun }}
-                                    </option>
-                                @endforeach
-                            </select>
-                    </td>
+                <td class="text-center">
 
-                    <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-save"></i>
-                            </button>
-                        </form>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-warning"
+                            onclick="enableEditJurusan({{ $item->id_jurusan }})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
 
-                        @if($isSuperAdmin)
-                        <form action="{{ route('admin.jurusan.delete', $item->id_jurusan) }}"
-                              method="POST"
-                              class="d-inline"
-                              onsubmit="return confirm('Hapus jurusan ini?')">
-                            @csrf
-                            @method('DELETE')
+                    <button type="submit"
+                            class="btn btn-sm btn-outline-primary d-none"
+                            id="save-jurusan-{{ $item->id_jurusan }}">
+                        <i class="bi bi-save"></i>
+                    </button>
 
-                            <button class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                        @endif
-                    </td>
+                </form>
 
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="text-center text-muted py-4">
-                        Belum ada data
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
+                @if($isSuperAdmin)
+                <form action="{{ route('admin.jurusan.delete',$item->id_jurusan) }}"
+                      method="POST"
+                      class="d-inline"
+                      onsubmit="return confirm('Hapus jurusan ini?')">
+                    @csrf
+                    @method('DELETE')
 
-        </table>
+                    <button class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+                @endif
+
+                </td>
+
+            </tr>
+            @empty
+            <tr>
+                <td colspan="3" class="text-center text-muted">Tidak ada data</td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
     </div>
+</div>
 
-</section>
+{{-- ================= PRODI ================= --}}
+<div class="tab-pane fade" id="prodi">
+
+    <form action="{{ route('admin.prodi.store') }}" method="POST" class="mb-3">
+        @csrf
+        <div class="d-flex gap-2">
+            <input type="text" name="nama_prodi" class="form-control" placeholder="Nama prodi" required>
+
+            <select name="id_jurusan" class="form-control" required>
+                <option value="">Pilih Jurusan</option>
+                @foreach($jurusan as $j)
+                <option value="{{ $j->id_jurusan }}">{{ $j->nama_jurusan }}</option>
+                @endforeach
+            </select>
+
+            <button class="btn btn-success">Tambah</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Nama Prodi</th>
+                <th>Jurusan</th>
+                <th class="text-center" width="120">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($prodi as $item)
+            <tr>
+
+                <td>
+                    <form action="{{ route('admin.prodi.update',$item->id_prodi) }}" method="POST" class="d-flex gap-2">
+                        @csrf
+                        @method('PUT')
+
+                        <input type="text"
+                               name="nama_prodi"
+                               value="{{ $item->nama_prodi }}"
+                               class="form-control form-control-sm"
+                               required>
+                </td>
+
+                <td>
+                        <select name="id_jurusan" class="form-control form-control-sm" required>
+                            @foreach($jurusan as $j)
+                                <option value="{{ $j->id_jurusan }}"
+                                    {{ $j->id_jurusan == $item->id_jurusan ? 'selected' : '' }}>
+                                    {{ $j->nama_jurusan }}
+                                </option>
+                            @endforeach
+                        </select>
+                </td>
+
+                <td class="text-center">
+                        <button class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </form>
+
+                    @if($isSuperAdmin)
+                    <form action="{{ route('admin.prodi.delete',$item->id_prodi) }}"
+                          method="POST"
+                          class="d-inline"
+                          onsubmit="return confirm('Hapus prodi ini?')">
+                        @csrf
+                        @method('DELETE')
+
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                    @endif
+                </td>
+
+            </tr>
+            @empty
+            <tr>
+                <td colspan="3" class="text-center text-muted">Tidak ada data</td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+    </div>
+</div>
+
+</div>
 
 @endsection
+
+@push('scripts')
+<script>
+function enableEditJurusan(id) {
+    document.getElementById('jurusan-' + id).disabled = false;
+    document.getElementById('save-jurusan-' + id).classList.remove('d-none');
+}
+</script>
+@endpush

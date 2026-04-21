@@ -67,40 +67,46 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::get('/dashboard',   [AdminMasterDataController::class, 'dashboard'])->name('dashboard');
     Route::get('/master-data', fn () => redirect()->route('admin.dashboard'))->name('master-data');
 
-    Route::get('/jurusan', [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
-    Route::get('/tema',    [AdminMasterDataController::class, 'temaIndex'])->name('tema.index');
-    Route::get('/users/report', [AdminMasterDataController::class, 'usersReport'])
-    ->name('users.report');
-    Route::get('/users',   [AdminMasterDataController::class, 'usersIndex'])->name('users.index');
+    // ── Jurusan & Prodi (1 halaman) ───────────────────────────────────────
+    Route::get('/jurusan',         [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
+    Route::post('/jurusan',        [AdminMasterDataController::class, 'storeJurusan'])->name('jurusan.store');
+    Route::put('/jurusan/{id}',    [AdminMasterDataController::class, 'updateJurusan'])->name('jurusan.update');
+    Route::delete('/jurusan/{id}', [AdminMasterDataController::class, 'deleteJurusan'])->name('jurusan.delete');
 
+    Route::post('/prodi',          [AdminMasterDataController::class, 'storeProdi'])->name('prodi.store');
+    Route::put('/prodi/{id}',      [AdminMasterDataController::class, 'updateProdi'])->name('prodi.update');
+    Route::delete('/prodi/{id}',   [AdminMasterDataController::class, 'deleteProdi'])->name('prodi.delete');
+
+    // ── Tema & Rumpun (1 halaman) ─────────────────────────────────────────
+    Route::get('/tema',            [AdminMasterDataController::class, 'temaIndex'])->name('tema.index');
+    Route::post('/tema',           [AdminMasterDataController::class, 'storeTema'])->name('tema.store');
+    Route::put('/tema/{id}',       [AdminMasterDataController::class, 'updateTema'])->name('tema.update');
+    Route::delete('/tema/{id}',    [AdminMasterDataController::class, 'deleteTema'])->name('tema.delete');
+
+    Route::post('/rumpun',         [AdminMasterDataController::class, 'storeRumpun'])->name('rumpun.store');
+    Route::put('/rumpun/{id}',     [AdminMasterDataController::class, 'updateRumpun'])->name('rumpun.update');
+    Route::delete('/rumpun/{id}',  [AdminMasterDataController::class, 'deleteRumpun'])->name('rumpun.delete');
+
+    // ── Users ─────────────────────────────────────────────────────────────
+    Route::get('/users/report',       [AdminMasterDataController::class, 'usersReport'])->name('users.report');
+    Route::get('/users',              [AdminMasterDataController::class, 'usersIndex'])->name('users.index');
     Route::put('/users/{id}',         [AdminMasterDataController::class, 'updateUser'])->name('users.update');
     Route::post('/users/store-admin', [AdminMasterDataController::class, 'storeAdmin'])->name('users.store-admin');
     Route::delete('/users/{id}',      [AdminMasterDataController::class, 'deleteUser'])->name('users.delete');
 
-    
-    Route::put('/jurusan/{id}',    [AdminMasterDataController::class, 'updateJurusan'])->name('jurusan.update');
-    Route::delete('/jurusan/{id}', [AdminMasterDataController::class, 'deleteJurusan'])->name('jurusan.delete');
-
-    Route::put('/prodi/{id}',    [AdminMasterDataController::class, 'updateProdi'])->name('prodi.update');
-    Route::delete('/prodi/{id}', [AdminMasterDataController::class, 'deleteProdi'])->name('prodi.delete');
-
-    Route::put('/tema/{id}',    [AdminMasterDataController::class, 'updateTema'])->name('tema.update');
-    Route::delete('/tema/{id}', [AdminMasterDataController::class, 'deleteTema'])->name('tema.delete');
-
+    // ── Profile ───────────────────────────────────────────────────────────
     Route::get('/profile',           [AdminMasterDataController::class, 'profile'])->name('profile');
     Route::post('/profile/update',   [AdminMasterDataController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/password', [AdminMasterDataController::class, 'updatePassword'])->name('profile.password');
 
-    // ── Dokumen ──────────────────────────────────────────────────────────
+    // ── Dokumen ───────────────────────────────────────────────────────────
     Route::get('/documents',                 [AdminDokumenController::class, 'index'])->name('documents.index');
-    Route::get('/documents/report',          [AdminDokumenController::class, 'report'])->name('documents.report'); // ← PINDAH KE ATAS
+    Route::get('/documents/report',          [AdminDokumenController::class, 'report'])->name('documents.report');
     Route::get('/documents/{id}/detail',     [AdminDokumenController::class, 'detail'])->name('dokumen.detail');
     Route::put('/documents/{id}/approve',    [AdminDokumenController::class, 'approve'])->name('dokumen.approve');
     Route::put('/documents/{id}/reject',     [AdminDokumenController::class, 'reject'])->name('dokumen.reject');
     Route::put('/documents/{id}/revoke',     [AdminDokumenController::class, 'revoke'])->name('dokumen.revoke');
     Route::delete('/documents/{id}/destroy', [AdminDokumenController::class, 'destroy'])->name('dokumen.destroy');
-    // ─────────────────────────────────────────────────────────────────────
-
 });
 
 // ── LOGOUT ────────────────────────────────────────────────────────────────
