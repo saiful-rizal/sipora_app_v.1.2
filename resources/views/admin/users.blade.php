@@ -1,0 +1,465 @@
+@extends('admin.layout')
+
+@section('title','Pengelolaan User')
+@section('page_label','User')
+@section('search_target','#table-users')
+
+@section('content')
+
+{{-- HEADER --}}
+<div class="mb-4">
+    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+        Modul Pengguna
+    </span>
+    <h4 class="fw-bold mb-1">Pengelolaan Pengguna</h4>
+    <small class="text-muted">
+        Kelola akun, role, dan status pengguna
+    </small>
+</div>
+
+@if(!$isSuperAdmin)
+<div class="alert alert-warning py-2">
+    <i class="bi bi-shield-lock"></i>
+    Akses terbatas: hanya bisa ubah user non-admin
+</div>
+@endif
+
+<section class="admin-panel">
+
+    {{-- TOP BAR --}}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        {{-- INFO --}}
+        <div class="d-flex gap-2 flex-wrap">
+
+            <div class="info-chip">
+                <i class="bi bi-people"></i>
+                {{ $users->count() }}
+            </div>
+
+            <div class="info-chip success">
+                <i class="bi bi-check-circle"></i>
+                {{ $users->where('status','approved')->count() }}
+            </div>
+
+            <div class="info-chip warning">
+                <i class="bi bi-hourglass-split"></i>
+                {{ $users->where('status','pending')->count() }}
+            </div>
+
+            <div class="info-chip danger">
+                <i class="bi bi-x-circle"></i>
+                {{ $users->where('status','rejected')->count() }}
+            </div>
+
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+
+            <button class="btn btn-sm btn-outline-primary active"
+                    onclick="filterRole('all', this)">
+                Semua
+            </button>
+
+            <button class="btn btn-sm btn-outline-primary"
+                    onclick="filterRole('admin', this)">
+                Admin
+            </button>
+
+            <button class="btn btn-sm btn-outline-primary"
+                    onclick="filterRole('mahasiswa', this)">
+                Mahasiswa
+            </button>
+
+        </div>
+
+        {{-- BUTTON --}}
+        @if($isSuperAdmin)
+        <button class="btn btn-primary d-flex align-items-center gap-2 px-3"
+                onclick="openSlide()">
+            <i class="bi bi-plus-circle"></i>
+            Tambah Admin
+        </button>
+        @endif
+
+    </div>
+
+    {{-- TABLE SUPER ADMIN (ID 1) --}}
+    <div class="mb-4">
+        <h6 class="fw-semibold mb-2">Super Admin Utama (ID 1)</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>NIM</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if($superAdminUser)
+                        <tr>
+                            <td>{{ $superAdminUser->id_user }}</td>
+                            <td>{{ $superAdminUser->nama_lengkap }}</td>
+                            <td>{{ $superAdminUser->username }}</td>
+                            <td>{{ $superAdminUser->email }}</td>
+                            <td>{{ $superAdminUser->nim ?: '-' }}</td>
+                            <td><span class="badge bg-danger">Super Admin</span></td>
+                            <td><span class="badge bg-success">{{ ucfirst($superAdminUser->status) }}</span></td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">Terlindungi</span>
+                            </td>
+                        </tr>
+                    @else
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-3">
+                                Data Super Admin utama (ID 1) tidak ditemukan
+                            </td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- TABLE ADMIN/PENGGUNA ID >= 2 --}}
+    <h6 class="fw-semibold mb-2">Data Pengguna ID 2 dan Seterusnya</h6>
+    <div class="table-responsive">
+<table id="table-users" class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>NIM</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th class="text-center">Aksi</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @forelse($regularUsers as $item)
+                    @php
+                        $lockedByRole = !$isSuperAdmin && in_array((string)$item->role, ['admin','superadmin'], true);
+                    @endphp
+
+
+<tr data-role="{{ strtolower($item->role) }}">
+    <td>{{ $item->id_user }}</td>
+    <td>{{ $item->nama_lengkap }}</td>
+    <td>{{ $item->username }}</td>
+    <td>{{ $item->email }}</td>
+    <td>{{ $item->nim ?: '-' }}</td>
+
+    <td colspan="3">
+    <form action="{{ route('admin.users.update',$item->id_user) }}" method="POST" class="d-flex align-items-center gap-2">
+    @csrf
+    @method('PUT')
+
+    @php
+        $roleOptions = collect($role_options ?? []);
+        $statusOptions = collect($status_options ?? []);
+    @endphp
+
+    <select name="role" class="form-select form-select-sm" style="width:120px" {{ $isSuperAdmin ? '' : 'disabled' }}>
+        @foreach($roleOptions as $role)
+            <option value="{{ $role->role_key }}" {{ $item->role == $role->role_key ? 'selected' : '' }}>
+                {{ $role->role_label }}
+            </option>
+        @endforeach
+    </select>
+
+    <select name="status" class="form-select form-select-sm" style="width:120px" {{ $lockedByRole?'disabled':'' }}>
+        @foreach($statusOptions as $status)
+            <option value="{{ $status->status_key }}" {{ $item->status == $status->status_key ? 'selected' : '' }}>
+                {{ $status->status_label }}
+            </option>
+        @endforeach
+    </select>
+
+    <!-- SAVE -->
+    <button type="button" class="btn btn-sm btn-outline-primary btn-save" {{ $lockedByRole?'disabled':'' }}>
+        <i class="bi bi-save"></i>
+    </button>
+
+    <!-- DELETE (SEJAJAR) -->
+    @if($item->status === 'rejected')
+       <button type="button"
+    class="btn btn-sm btn-outline-danger btn-delete"
+    data-id="{{ $item->id_user }}">
+            <i class="bi bi-trash"></i>
+        </button>
+    @endif
+</form>
+
+</td>
+</tr>
+
+                @empty
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        Belum ada data user
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+
+        </table>
+    </div>
+
+</section>
+
+{{-- ===== SLIDE PANEL ===== --}}
+@if($isSuperAdmin)
+<div id="slidePanel" class="slide-panel">
+
+    <div class="slide-header">
+        <h6 class="fw-semibold mb-0">Tambah Admin</h6>
+        <button type="button" onclick="closeSlide()">×</button>
+    </div>
+
+    <form method="POST" action="{{ route('admin.users.store-admin') }}">
+        @csrf
+
+        <input type="text" name="nama_lengkap" class="form-control mb-2" placeholder="Nama Lengkap" required>
+        <input type="text" name="nim" class="form-control mb-2" placeholder="NIM / NIP" required>
+        <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
+        <input type="text" name="username" class="form-control mb-2" placeholder="Username" required>
+        <input type="password" name="password" class="form-control mb-2" placeholder="Password" required>
+        <input type="password" name="password_confirmation" class="form-control mb-3" placeholder="Konfirmasi Password" required>
+
+        <button class="btn btn-primary w-100">
+            Simpan Admin
+        </button>
+    </form>
+
+</div>
+
+<div id="overlay" class="overlay" onclick="closeSlide()"></div>
+@endif
+
+{{-- ===== TOAST SUCCESS ===== --}}
+@if(session('success'))
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="liveToast" class="toast text-bg-success border-0">
+        <div class="toast-body">
+            {{ session('success') }}
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- ===== MODAL KONFIRMASI SAVE ===== -->
+<div class="modal fade" id="confirmSaveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h6 class="modal-title">Konfirmasi</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                Simpan perubahan user ini?
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <button class="btn btn-primary" id="confirmSaveBtn">
+                    Ya, Simpan
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- ===== MODAL DELETE ===== -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h6 class="modal-title text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Hapus User
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                Yakin mau menghapus user ini? <br>
+                <small class="text-muted">Data tidak bisa dikembalikan.</small>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">
+                    Batal
+                </button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    Ya, Hapus
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+ 
+@endsection
+
+@push('scripts')
+
+<script>
+function filterRole(role, btn){
+
+    document.querySelectorAll('.btn-outline-primary').forEach(b => {
+        b.classList.remove('active');
+    });
+    btn.classList.add('active');
+
+    document.querySelectorAll('#table-users tbody tr').forEach(row => {
+
+        const rowRole = row.dataset.role;
+
+        if(role === 'all'){
+            row.style.display = '';
+        }
+        else if(role === 'admin'){
+            if(rowRole === 'admin' || rowRole === 'superadmin'){
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+        else if(role === 'mahasiswa'){
+            row.style.display = (rowRole === 'mahasiswa') ? '' : 'none';
+        }
+
+    });
+}
+</script>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function(){
+
+    let selectedForm = null;
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+
+    // klik tombol save
+    document.querySelectorAll('.btn-save').forEach(btn => {
+        btn.addEventListener('click', function(){
+
+         selectedDeleteForm = document.createElement('form');
+selectedDeleteForm.method = 'POST';
+selectedDeleteForm.action = `/admin/users/${this.dataset.id}`;
+
+// CSRF
+let csrf = document.createElement('input');
+csrf.type = 'hidden';
+csrf.name = '_token';
+csrf.value = '{{ csrf_token() }}';
+
+// METHOD DELETE
+let method = document.createElement('input');
+method.type = 'hidden';
+method.name = '_method';
+method.value = 'DELETE';
+
+selectedDeleteForm.appendChild(csrf);
+selectedDeleteForm.appendChild(method);
+
+document.body.appendChild(selectedDeleteForm);
+
+            modal.show();
+        });
+    });
+
+    // klik "Ya, Simpan"
+    document.getElementById('confirmSaveBtn').addEventListener('click', function(){
+        if(selectedForm){
+            selectedForm.submit();
+        }
+    });
+
+});
+
+/* SLIDE */
+function openSlide(){
+    document.getElementById('slidePanel')?.classList.add('open');
+    document.getElementById('overlay')?.classList.add('show');
+}
+function closeSlide(){
+    document.getElementById('slidePanel')?.classList.remove('open');
+    document.getElementById('overlay')?.classList.remove('show');
+}
+document.addEventListener('DOMContentLoaded', function(){
+
+    let selectedForm = null;
+    const saveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+    const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    let selectedDeleteForm = null;
+
+    // SAVE BUTTON
+    document.querySelectorAll('.btn-save').forEach(btn => {
+        btn.addEventListener('click', function(){
+            selectedForm = this.closest('form');
+            saveModal.show();
+        });
+    });
+
+    document.getElementById('confirmSaveBtn').addEventListener('click', function(){
+        if(selectedForm){
+            selectedForm.submit();
+        }
+    });
+
+    // DELETE BUTTON
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function(){
+            // buat form DELETE sementara
+            selectedDeleteForm = document.createElement('form');
+            selectedDeleteForm.method = 'POST';
+            selectedDeleteForm.action = `/admin/users/${this.dataset.id}`;
+
+            // CSRF
+            let csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = '{{ csrf_token() }}';
+
+            // METHOD DELETE
+            let method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+
+            selectedDeleteForm.appendChild(csrf);
+            selectedDeleteForm.appendChild(method);
+
+            document.body.appendChild(selectedDeleteForm);
+
+            deleteModal.show();
+        });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function(){
+        if(selectedDeleteForm){
+            selectedDeleteForm.submit();
+        }
+    });
+
+});
+</script>
+
+@endpush

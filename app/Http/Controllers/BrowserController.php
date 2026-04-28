@@ -1,0 +1,225 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+
+class BrowserController extends Controller
+{
+    private const STATUS_PUBLIKASI_ID = 5;
+
+    public function index(Request $request): View|RedirectResponse
+    {
+        if (! $this->sessionUser($request)) {
+            return redirect()->route('login')->with('login_error', 'Silakan login terlebih dahulu.');
+        }
+
+        $filterJurusan = $request->query('filter_jurusan');
+        $filterProdi = $request->query('filter_prodi');
+        $filterTema = $request->query('filter_tema');
+        $filterJenis = $request->query('filter_jenis');
+
+        $query = DB::table('dokumen as d')
+            ->leftJoin('users as u', 'd.uploader_id', '=', 'u.id_user')
+            ->leftJoin('master_jurusan as j', 'd.id_jurusan', '=', 'j.id_jurusan')
+            ->leftJoin('master_prodi as p', 'd.id_prodi', '=', 'p.id_prodi')
+            ->leftJoin('master_tema as t', 'd.id_tema', '=', 't.id_tema')
+            ->leftJoin('master_status_dokumen as s', 'd.status_id', '=', 's.status_id')
+            ->where('d.status_id', self::STATUS_PUBLIKASI_ID)
+            ->select([
+                'd.*',
+                'u.username as uploader_name',
+                'u.email as uploader_email',
+                'j.nama_jurusan',
+                'p.nama_prodi',
+                't.nama_tema',
+                's.nama_status as status_name',
+            ]);
+
+        if (! empty($filterJurusan)) {
+            $query->where('d.id_jurusan', $filterJurusan);
+        }
+        if (! empty($filterProdi)) {
+            $query->where('d.id_prodi', $filterProdi);
+        }
+        if (! empty($filterTema)) {
+            $query->where('d.id_tema', $filterTema);
+        }
+        if (! empty($filterJenis)) {
+            $allowedJenis = ['pdf', 'docx'];
+            $jenis = strtolower((string) $filterJenis);
+            if (in_array($jenis, $allowedJenis, true)) {
+                $query->whereRaw('LOWER(d.file_path) LIKE ?', ['%.' . $jenis]);
+            }
+        }
+
+        // Apply sorting
+        $sort = $request->query('sort', 'newest');
+        switch ($sort) {
+            case 'title_za':
+                $query->orderBy('d.judul', 'desc');
+                break;
+            case 'oldest':
+                $query->orderBy('d.tgl_unggah', 'asc');
+                break;
+            case 'title_az':
+                $query->orderBy('d.judul', 'asc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('d.tgl_unggah', 'desc');
+                break;
+        }
+
+        $documents = $query->get()->map(fn ($doc) => $this->mapDocument($doc));
+
+        // Get all prodi for initial load (without jurusan filter)
+        $allProdi = DB::table('master_prodi')->orderBy('nama_prodi')->get();
+
+        return view('browser', [
+            'documents' => $documents,
+            'jurusan_data' => DB::table('master_jurusan')->orderBy('nama_jurusan')->get(),
+            'prodi_data' => $allProdi,
+            'tema_data' => DB::table('master_tema')->orderBy('nama_tema')->get(),
+            'sort_options' => DB::table('master_sort_options')
+                ->whereIn('sort_scope', ['browser', 'both'])
+                ->orderBy('sort_order')
+                ->get(),
+            'filter_jurusan' => $filterJurusan,
+            'filter_prodi' => $filterProdi,
+            'filter_tema' => $filterTema,
+            'filter_jenis' => $filterJenis,
+            'current_sort' => $sort,
+        ]);
+    }
+
+    /**
+     * Get Prodi by Jurusan ID (for AJAX dynamic dropdown)
+     */
+    public function getProdi(Request $request): JsonResponse
+    {
+        // PERBAIKAN: Gunakan 'jurusan_id' sesuai dengan yang dikirim JavaScript
+        $idJurusan = (int) $request->query('jurusan_id', 0);
+
+        // Jika ID jurusan tidak valid, return empty array
+        if ($idJurusan <= 0) {
+            return response()->json([]);
+        }
+
+        $prodi = DB::table('master_prodi')
+            ->where('id_jurusan', $idJurusan)
+            ->orderBy('nama_prodi')
+            ->select('id_prodi', 'nama_prodi')
+            ->get();
+
+        return response()->json($prodi);
+    }
+
+    public function getDetail(Request $request): JsonResponse
+    {
+        if (! $this->sessionUser($request)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+
+        $documentId = (int) $request->query('id');
+
+        $document = DB::table('dokumen as d')
+            ->leftJoin('users as u', 'd.uploader_id', '=', 'u.id_user')
+            ->leftJoin('master_jurusan as j', 'd.id_jurusan', '=', 'j.id_jurusan')
+            ->leftJoin('master_prodi as p', 'd.id_prodi', '=', 'p.id_prodi')
+            ->leftJoin('master_tema as t', 'd.id_tema', '=', 't.id_tema')
+            ->leftJoin('master_tahun as y', 'd.year_id', '=', 'y.year_id')
+            ->leftJoin('master_status_dokumen as s', 'd.status_id', '=', 's.status_id')
+            ->where('d.dokumen_id', $documentId)
+            ->where('d.status_id', self::STATUS_PUBLIKASI_ID)
+            ->select([
+                'd.*',
+                'u.username as uploader_name',
+                'u.email as uploader_email',
+                'j.nama_jurusan',
+                'p.nama_prodi',
+                't.nama_tema',
+                'y.tahun',
+                's.nama_status as status_name',
+            ])
+            ->first();
+
+        if (! $document) {
+            return response()->json(['success' => false, 'message' => 'Document not found'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'document' => $this->mapDocument($document),
+        ]);
+    }
+
+    private function mapDocument(object $doc): array
+    {
+        $fileName = basename((string) ($doc->file_path ?? ''));
+        $fileDiskPath = public_path('uploads/documents/'.$fileName);
+        $keywords = ! empty($doc->kata_kunci)
+            ? array_values(array_filter(array_map('trim', explode(',', $doc->kata_kunci))))
+            : [];
+
+        return [
+            'dokumen_id' => $doc->dokumen_id,
+            'judul' => $doc->judul,
+            'abstrak' => $doc->abstrak,
+            'file_type' => strtolower(pathinfo($fileName, PATHINFO_EXTENSION)),
+            'file_size' => is_file($fileDiskPath) ? filesize($fileDiskPath) : 0,
+            'file_name' => $fileName,
+            'download_url' => asset('uploads/documents/'.$fileName),
+            'tgl_unggah' => $doc->tgl_unggah,
+            'uploader_name' => $doc->uploader_name,
+            'uploader_email' => $doc->uploader_email,
+            'nama_jurusan' => $doc->nama_jurusan,
+            'nama_prodi' => $doc->nama_prodi,
+            'nama_tema' => $doc->nama_tema ?? null,
+            'tahun' => $doc->tahun ?? null,
+            'status_name' => $doc->status_name ?? 'Unknown',
+            'status_badge' => $this->mapStatusBadge((int) ($doc->status_id ?? 0)),
+            'status_id' => $doc->status_id,
+            'turnitin' => $doc->turnitin,
+            'turnitin_file' => $doc->turnitin_file,
+            'kata_kunci' => $doc->kata_kunci,
+            'keywords' => $keywords,
+            'id_divisi' => $doc->id_divisi,
+            'id_jurusan' => $doc->id_jurusan,
+            'id_prodi' => $doc->id_prodi,
+            'id_tema' => $doc->id_tema,
+            'year_id' => $doc->year_id,
+            'uploader_id' => $doc->uploader_id,
+            'created_at' => $doc->tgl_unggah,
+            'updated_at' => $doc->tgl_unggah,
+        ];
+    }
+
+    private function mapStatusBadge(int $statusId): string
+    {
+        return match ($statusId) {
+            5 => 'badge-success',
+            4 => 'badge-danger',
+            3 => 'badge-secondary',
+            2 => 'badge-warning',
+            default => 'badge-info',
+        };
+    }
+
+    private function sessionUser(Request $request): ?array
+    {
+        $sessionUser = $request->session()->get('auth_user');
+        if (! $sessionUser || empty($sessionUser['id_user'])) {
+            return null;
+        }
+
+        return [
+            'id_user' => (int) $sessionUser['id_user'],
+            'role' => $sessionUser['role'] ?? 'mahasiswa',
+        ];
+    }
+}

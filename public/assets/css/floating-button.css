@@ -1,0 +1,226 @@
+/**
+ * SIPORA Floating Button Enhancement
+ * Optimizes the AI chatbot button for smooth floating and transitions
+ */
+
+/* ════════════════════════════════════════════
+   FLOATING BUTTON - BASE STYLES
+════════════════════════════════════════════ */
+
+#sbotFab {
+    /* Ensure proper stacking context */
+    position: fixed;
+    z-index: 999999;
+
+    /* Enable GPU acceleration for smooth animations */
+    transform: translateZ(0);
+    will-change: transform, opacity, box-shadow;
+    backface-visibility: hidden;
+    perspective: 1000px;
+
+    /* Anti-aliasing for crisp rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth transitions during page changes */
+body.page-leaving #sbotFab,
+body.page-leaving #sbotWindow {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Ensure button is visible on all screen sizes */
+@media (max-width: 480px) {
+    #sbotFab {
+        width: 54px;
+        height: 54px;
+        bottom: 20px;
+        right: 16px;
+        box-shadow:
+            0 8px 32px rgba(26, 86, 214, 0.3),
+            0 2px 8px rgba(15, 23, 42, 0.12) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #sbotFab {
+        bottom: 24px;
+        right: 20px;
+    }
+
+    #sbotWindow {
+        bottom: 96px !important;
+        right: 16px !important;
+        width: calc(100vw - 32px) !important;
+        max-width: 360px !important;
+    }
+}
+
+/* ════════════════════════════════════════════
+   WINDOW OPTIMIZATION
+════════════════════════════════════════════ */
+
+#sbotWindow {
+    position: fixed;
+    z-index: 999998;
+
+    /* GPU acceleration */
+    transform: translateZ(0);
+    will-change: transform, opacity, width, height;
+    backface-visibility: hidden;
+    perspective: 1000px;
+
+    /* Anti-aliasing */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fullscreen mode optimization */
+#sbotWindow.sbot-fullscreen {
+    transform: none !important;
+    will-change: auto;
+}
+
+/* ════════════════════════════════════════════
+   SMOOTH SCROLL ENHANCEMENT
+════════════════════════════════════════════ */
+
+html {
+    scroll-behavior: smooth;
+    /* Reduce scroll lag on mobile */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scroll messages inside chatbot */
+.sbot-messages {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Momentum scrolling on iOS */
+}
+
+/* ════════════════════════════════════════════
+   PAGE TRANSITION ANIMATIONS
+════════════════════════════════════════════ */
+
+/* Fade in animation for new pages */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade out animation for leaving pages */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+body {
+    animation: fadeIn 0.4s ease-out;
+}
+
+body.page-leaving {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+/* ════════════════════════════════════════════
+   PERFORMANCE OPTIMIZATIONS
+════════════════════════════════════════════ */
+
+/* Optimize common transition properties */
+.sbot-fab-icon,
+.sbot-header,
+.sbot-messages,
+.sbot-msg,
+.sbot-bubble {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reduce repaints during scrolling */
+.sbot-messages {
+    contain: layout style paint;
+}
+
+/* ════════════════════════════════════════════
+   ACCESSIBILITY & TOUCH OPTIMIZATION
+════════════════════════════════════════════ */
+
+#sbotFab,
+#sbotFab:hover,
+#sbotFab:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+#sbotFab:focus-visible {
+    outline: 2px solid var(--sbot-blue, #1a56d6);
+    outline-offset: 2px;
+}
+
+/* Touch target size optimization */
+@media (hover: none) and (pointer: coarse) {
+    #sbotFab {
+        min-width: 48px;
+        min-height: 48px;
+    }
+}
+
+/* ════════════════════════════════════════════
+   LANDSCAPE ORIENTATION
+════════════════════════════════════════════ */
+
+@media (orientation: landscape) and (max-height: 500px) {
+    #sbotFab {
+        width: 50px;
+        height: 50px;
+        bottom: 16px;
+        right: 16px;
+    }
+
+    #sbotWindow {
+        height: calc(100vh - 100px) !important;
+        bottom: 68px !important;
+    }
+}
+
+/* ════════════════════════════════════════════
+   DARK MODE SUPPORT
+════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+    #sbotFab {
+        /* Adjust shadow for better visibility in dark mode */
+        box-shadow:
+            0 10px 40px rgba(26, 86, 214, 0.5),
+            0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    }
+}
+
+/* ════════════════════════════════════════════
+   REDUCED MOTION SUPPORT
+════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    #sbotFab,
+    #sbotWindow,
+    .sbot-msg,
+    .sbot-bubble {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
