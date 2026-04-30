@@ -57,196 +57,192 @@
 
     </div>
 
-<<<<<<< HEAD
-    <!-- ===== CHART ===== -->
     <div class="row mt-3 mb-2">
-=======
-    <!-- ===== QUICK ACCESS ===== -->
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h5 class="mb-0">Akses Cepat</h5>
-                    <small class="text-muted">Navigasi cepat ke fitur utama</small>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="mb-0">Akses Cepat</h5>
+                        <small class="text-muted">Navigasi cepat ke fitur utama</small>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary">
+                        <i class="bi bi-lightning-charge"></i> Quick Menu
+                    </span>
                 </div>
-                <span class="badge bg-primary-subtle text-primary">
-                    <i class="bi bi-lightning-charge"></i> Quick Menu
-                </span>
+
+                <div class="row g-2">
+
+                    <div class="col-md-3">
+                        <a href="{{ route('admin.jurusan.index') }}" class="quick-btn">
+                            <i class="bi bi-diagram-3"></i> Jurusan
+                        </a>
+                    </div>
+
+
+
+                    <div class="col-md-3">
+                        <a href="{{ route('admin.tema.index') }}" class="quick-btn">
+                            <i class="bi bi-bookmarks"></i> Tema
+                        </a>
+                    </div>
+
+                    <div class="col-md-3">
+                        <a href="{{ route('admin.users.index') }}" class="quick-btn">
+                            <i class="bi bi-people"></i> User
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+        <div class="row mt-4">
+            >>>>>>> 19adf2ee80a2bf764b8413ab32f1f26955dc224e
+
+            <!-- Bar Chart -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5 class="fw-semibold">Statistik Status Dokumen</h5>
+                        <p class="text-muted small">Jumlah dokumen berdasarkan status</p>
+                        <canvas id="statusBarChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <div class="row g-2">
-
-                <div class="col-md-3">
-                    <a href="{{ route('admin.jurusan.index') }}" class="quick-btn">
-                        <i class="bi bi-diagram-3"></i> Jurusan
-                    </a>
+            <!-- Doughnut Chart -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <h5 class="fw-semibold">Persentase Status Dokumen</h5>
+                        <p class="text-muted small">Distribusi Dokumen</p>
+                        <canvas id="statusPieChart" style="max-height:250px;"></canvas>
+                    </div>
                 </div>
-
-               
-
-                <div class="col-md-3">
-                    <a href="{{ route('admin.tema.index') }}" class="quick-btn">
-                        <i class="bi bi-bookmarks"></i> Tema
-                    </a>
-                </div>
-
-                <div class="col-md-3">
-                    <a href="{{ route('admin.users.index') }}" class="quick-btn">
-                        <i class="bi bi-people"></i> User
-                    </a>
-                </div>
-
             </div>
 
         </div>
-    </div>
-    <div class="row mt-4">
->>>>>>> 19adf2ee80a2bf764b8413ab32f1f26955dc224e
 
-        <!-- Bar Chart -->
-        <div class="col-md-7">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h5 class="fw-semibold">Statistik Status Dokumen</h5>
-                    <p class="text-muted small">Jumlah dokumen berdasarkan status</p>
-                    <canvas id="statusBarChart"></canvas>
-                </div>
+        <!-- ===== TABEL ===== -->
+        <div class="card-modern mt-2 mb-3">
+
+            <div class="card-header-modern">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Daftar Dokumen Terbaru</span>
             </div>
-        </div>
 
-        <!-- Doughnut Chart -->
-        <div class="col-md-5">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-                    <h5 class="fw-semibold">Persentase Status Dokumen</h5>
-                    <p class="text-muted small">Distribusi Dokumen</p>
-                    <canvas id="statusPieChart" style="max-height:250px;"></canvas>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ===== TABEL ===== -->
-    <div class="card-modern mt-2 mb-3">
-
-        <div class="card-header-modern">
-            <i class="bi bi-file-earmark-text"></i>
-            <span>Daftar Dokumen Terbaru</span>
-        </div>
-
-        <table class="table-modern">
-            <thead>
-                <tr>
-                    <th style="width:80px">ID</th>
-                    <th>Judul</th>
-                    <th style="width:120px">Tahun</th>
-                    <th style="width:150px">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($dokumenTerbaru as $item)
-                    @php
-                        $status = strtolower($item->nama_status ?? '');
-
-                        $badge = str_contains($status, 'terbit')
-                            ? 'published'
-                            : (str_contains($status, 'setuju')
-                                ? 'approved'
-                                : (str_contains($status, 'tolak')
-                                    ? 'rejected'
-                                    : 'pending'));
-                    @endphp
-
+            <table class="table-modern">
+                <thead>
                     <tr>
-                        <td>{{ $item->dokumen_id }}</td>
-                        <td>{{ $item->judul }}</td>
-                        <td>{{ $item->tahun ?? '-' }}</td>
-                        <td>
-                            <span class="badge-modern {{ $badge }}">
-                                {{ $item->nama_status }}
-                            </span>
-                        </td>
+                        <th style="width:80px">ID</th>
+                        <th>Judul</th>
+                        <th style="width:120px">Tahun</th>
+                        <th style="width:150px">Status</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="text-center text-muted">
-                            Tidak ada data dokumen
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse ($dokumenTerbaru as $item)
+                        @php
+                            $status = strtolower($item->nama_status ?? '');
 
-    </div>
+                            $badge = str_contains($status, 'terbit')
+                                ? 'published'
+                                : (str_contains($status, 'setuju')
+                                    ? 'approved'
+                                    : (str_contains($status, 'tolak')
+                                        ? 'rejected'
+                                        : 'pending'));
+                        @endphp
 
-    <!-- CHART JS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                        <tr>
+                            <td>{{ $item->dokumen_id }}</td>
+                            <td>{{ $item->judul }}</td>
+                            <td>{{ $item->tahun ?? '-' }}</td>
+                            <td>
+                                <span class="badge-modern {{ $badge }}">
+                                    {{ $item->nama_status }}
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                Tidak ada data dokumen
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
-    <script>
-        const labels = @json($labels);
-        const dataJumlah = @json($dataJumlah);
+        </div>
 
-        const colors = [
-            "#6366F1",
-            "#22C55E",
-            "#F59E0B",
-            "#EF4444",
-            "#06B6D4"
-        ];
+        <!-- CHART JS -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        // BAR
-        new Chart(document.getElementById('statusBarChart'), {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataJumlah,
-                    backgroundColor: colors,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+        <script>
+            const labels = @json($labels);
+            const dataJumlah = @json($dataJumlah);
+
+            const colors = [
+                "#6366F1",
+                "#22C55E",
+                "#F59E0B",
+                "#EF4444",
+                "#06B6D4"
+            ];
+
+            // BAR
+            new Chart(document.getElementById('statusBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataJumlah,
+                        backgroundColor: colors,
+                        borderRadius: 8
+                    }]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1, // biar loncatnya 1
-                            callback: function(value) {
-                                return Number.isInteger(value) ? value : null;
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1, // biar loncatnya 1
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : null;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
 
-        // PIE
-        new Chart(document.getElementById('statusPieChart'), {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataJumlah,
-                    backgroundColor: colors
-                }]
-            },
-            options: {
-                cutout: "65%",
-                plugins: {
-                    legend: {
-                        position: "bottom"
+            // PIE
+            new Chart(document.getElementById('statusPieChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataJumlah,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    cutout: "65%",
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        }
                     }
                 }
-            }
-        });
-    </script>
+            });
+        </script>
 
-@endsection
+    @endsection
