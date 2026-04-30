@@ -139,7 +139,7 @@
 
                 <div class="adminx-topbar-search">
                     <i class="bi bi-search"></i>
-                    <input type="text" value="Master Data" readonly>
+                    <input type="text" id="globalSearch" placeholder="Search..." autocomplete="off">
                 </div>
 
                 <div class="adminx-user-chip">
@@ -310,48 +310,75 @@
                                     <th style="width: 28%">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @forelse($jurusan as $item)
-                                    <tr>
-                                        <td class="fw-semibold">{{ $item->id_jurusan }}</td>
-                                        <td>
-                                            <form action="{{ route('admin.jurusan.update', $item->id_jurusan) }}" method="POST" class="admin-form-row">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="text" name="nama_jurusan" class="form-control form-control-sm" value="{{ $item->nama_jurusan }}" required maxlength="100">
-                                        </td>
-                                        <td>
-                                                <select name="id_rumpun" class="form-select form-select-sm">
-                                                    <option value="">Tanpa Rumpun</option>
-                                                    @foreach($rumpun as $rumpunItem)
-                                                        <option value="{{ $rumpunItem->id_rumpun }}" {{ (string) $item->id_rumpun === (string) $rumpunItem->id_rumpun ? 'selected' : '' }}>
-                                                            {{ $rumpunItem->nama_rumpun }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                        </td>
-                                        <td>
-                                                <div class="admin-actions">
-                                                    <button type="submit" class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-save"></i> Update
-                                                    </button>
-                                            </form>
-                                            @if($isSuperAdmin)
-                                                <form action="{{ route('admin.jurusan.delete', $item->id_jurusan) }}" method="POST" onsubmit="return confirm('Hapus jurusan ini? Prodi terkait juga akan dihapus.')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        <i class="bi bi-trash"></i> Hapus
-                                                    </button>
-                                                </form>
-                                            @endif
-                                                </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="4" class="text-center py-4">Data jurusan belum tersedia.</td></tr>
-                                @endforelse
-                            </tbody>
+                           <tbody>
+@forelse($jurusan as $item)
+<form action="{{ route('admin.jurusan.update', $item->id_jurusan) }}" method="POST">
+@csrf
+@method('PUT')
+
+<tr>
+<td class="fw-semibold">{{ $item->id_jurusan }}</td>
+
+<td>
+<input type="text"
+name="nama_jurusan"
+class="form-control form-control-sm"
+value="{{ $item->nama_jurusan }}"
+required
+maxlength="100">
+</td>
+
+<td>
+<select name="id_rumpun" class="form-select form-select-sm">
+<option value="">Tanpa Rumpun</option>
+
+@foreach($rumpun as $rumpunItem)
+<option value="{{ $rumpunItem->id_rumpun }}"
+{{ (string) $item->id_rumpun === (string) $rumpunItem->id_rumpun ? 'selected' : '' }}>
+{{ $rumpunItem->nama_rumpun }}
+</option>
+@endforeach
+
+</select>
+</td>
+
+<td>
+<div class="admin-actions">
+
+<button type="submit" class="btn btn-sm btn-primary">
+<i class="bi bi-save"></i> Update
+</button>
+
+</form>
+
+@if($isSuperAdmin)
+<form action="{{ route('admin.jurusan.delete', $item->id_jurusan) }}"
+method="POST"
+onsubmit="return confirm('Hapus jurusan ini? Prodi terkait juga akan dihapus.')">
+
+@csrf
+@method('DELETE')
+
+<button type="submit" class="btn btn-sm btn-outline-danger">
+<i class="bi bi-trash"></i> Hapus
+</button>
+
+</form>
+@endif
+
+</div>
+</td>
+
+</tr>
+
+@empty
+<tr>
+<td colspan="4" class="text-center py-4">
+Data jurusan belum tersedia.
+</td>
+</tr>
+@endforelse
+</tbody>
                         </table>
                     </div>
                 </section>
@@ -371,47 +398,79 @@
                                     <th style="width: 28%">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @forelse($prodi as $item)
-                                    <tr>
-                                        <td class="fw-semibold">{{ $item->id_prodi }}</td>
-                                        <td>
-                                            <form action="{{ route('admin.prodi.update', $item->id_prodi) }}" method="POST" class="admin-form-row">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="text" name="nama_prodi" class="form-control form-control-sm" value="{{ $item->nama_prodi }}" required maxlength="100">
-                                        </td>
-                                        <td>
-                                                <select name="id_jurusan" class="form-select form-select-sm" required>
-                                                    @foreach($jurusan as $jurusanItem)
-                                                        <option value="{{ $jurusanItem->id_jurusan }}" {{ (string) $item->id_jurusan === (string) $jurusanItem->id_jurusan ? 'selected' : '' }}>
-                                                            {{ $jurusanItem->nama_jurusan }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                        </td>
-                                        <td>
-                                                <div class="admin-actions">
-                                                    <button type="submit" class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-save"></i> Update
-                                                    </button>
-                                            </form>
-                                            @if($isSuperAdmin)
-                                                <form action="{{ route('admin.prodi.delete', $item->id_prodi) }}" method="POST" onsubmit="return confirm('Hapus prodi ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        <i class="bi bi-trash"></i> Hapus
-                                                    </button>
-                                                </form>
-                                            @endif
-                                                </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="4" class="text-center py-4">Data prodi belum tersedia.</td></tr>
-                                @endforelse
-                            </tbody>
+                           <tbody>
+@forelse($prodi as $item)
+<form action="{{ route('admin.prodi.update', $item->id_prodi) }}" method="POST">
+@csrf
+@method('PUT')
+
+<tr>
+
+<td class="fw-semibold">{{ $item->id_prodi }}</td>
+
+<td>
+<input type="text"
+name="nama_prodi"
+class="form-control form-control-sm"
+value="{{ $item->nama_prodi }}"
+required
+maxlength="100">
+</td>
+
+<td>
+<select name="id_jurusan" class="form-select form-select-sm" required>
+
+@foreach($jurusan as $jurusanItem)
+
+<option value="{{ $jurusanItem->id_jurusan }}"
+{{ (string) $item->id_jurusan === (string) $jurusanItem->id_jurusan ? 'selected' : '' }}>
+
+{{ $jurusanItem->nama_jurusan }}
+
+</option>
+
+@endforeach
+
+</select>
+</td>
+
+<td>
+<div class="admin-actions">
+
+<button type="submit" class="btn btn-sm btn-primary">
+<i class="bi bi-save"></i> Update
+</button>
+
+</form>
+
+@if($isSuperAdmin)
+<form action="{{ route('admin.prodi.delete', $item->id_prodi) }}"
+method="POST"
+onsubmit="return confirm('Hapus prodi ini?')">
+
+@csrf
+@method('DELETE')
+
+<button type="submit" class="btn btn-sm btn-outline-danger">
+<i class="bi bi-trash"></i> Hapus
+</button>
+
+</form>
+@endif
+
+</div>
+</td>
+
+</tr>
+
+@empty
+<tr>
+<td colspan="4" class="text-center py-4">
+Data prodi belum tersedia.
+</td>
+</tr>
+@endforelse
+</tbody>
                         </table>
                     </div>
                 </section>
@@ -433,50 +492,94 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($tema as $item)
-                                    <tr>
-                                        <td class="fw-semibold">{{ $item->id_tema }}</td>
-                                        <td>
-                                            <form action="{{ route('admin.tema.update', $item->id_tema) }}" method="POST" class="admin-form-row">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="text" name="kode_tema" class="form-control form-control-sm" value="{{ $item->kode_tema }}" maxlength="50" placeholder="Kode tema">
-                                        </td>
-                                        <td>
-                                                <input type="text" name="nama_tema" class="form-control form-control-sm" value="{{ $item->nama_tema }}" required maxlength="100">
-                                        </td>
-                                        <td>
-                                                <select name="id_rumpun" class="form-select form-select-sm">
-                                                    <option value="">Tanpa Rumpun</option>
-                                                    @foreach($rumpun as $rumpunItem)
-                                                        <option value="{{ $rumpunItem->id_rumpun }}" {{ (string) $item->id_rumpun === (string) $rumpunItem->id_rumpun ? 'selected' : '' }}>
-                                                            {{ $rumpunItem->nama_rumpun }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                        </td>
-                                        <td>
-                                                <div class="admin-actions">
-                                                    <button type="submit" class="btn btn-sm btn-primary">
-                                                        <i class="bi bi-save"></i> Update
-                                                    </button>
-                                            </form>
-                                            @if($isSuperAdmin)
-                                                <form action="{{ route('admin.tema.delete', $item->id_tema) }}" method="POST" onsubmit="return confirm('Hapus tema ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                        <i class="bi bi-trash"></i> Hapus
-                                                    </button>
-                                                </form>
-                                            @endif
-                                                </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="5" class="text-center py-4">Data tema belum tersedia.</td></tr>
-                                @endforelse
-                            </tbody>
+@forelse($tema as $item)
+
+<form action="{{ route('admin.tema.update', $item->id_tema) }}" method="POST">
+
+@csrf
+@method('PUT')
+
+<tr>
+
+<td class="fw-semibold">{{ $item->id_tema }}</td>
+
+<td>
+<input type="text"
+name="kode_tema"
+class="form-control form-control-sm"
+value="{{ $item->kode_tema }}"
+maxlength="50"
+placeholder="Kode tema">
+</td>
+
+<td>
+<input type="text"
+name="nama_tema"
+class="form-control form-control-sm"
+value="{{ $item->nama_tema }}"
+required
+maxlength="100">
+</td>
+
+<td>
+<select name="id_rumpun" class="form-select form-select-sm">
+
+<option value="">Tanpa Rumpun</option>
+
+@foreach($rumpun as $rumpunItem)
+
+<option value="{{ $rumpunItem->id_rumpun }}"
+{{ (string) $item->id_rumpun === (string) $rumpunItem->id_rumpun ? 'selected' : '' }}>
+
+{{ $rumpunItem->nama_rumpun }}
+
+</option>
+
+@endforeach
+
+</select>
+</td>
+
+<td>
+<div class="admin-actions">
+
+<button type="submit" class="btn btn-sm btn-primary">
+<i class="bi bi-save"></i> Update
+</button>
+
+</form>
+
+@if($isSuperAdmin)
+
+<form action="{{ route('admin.tema.delete', $item->id_tema) }}"
+method="POST"
+onsubmit="return confirm('Hapus tema ini?')">
+
+@csrf
+@method('DELETE')
+
+<button type="submit" class="btn btn-sm btn-outline-danger">
+<i class="bi bi-trash"></i> Hapus
+</button>
+
+</form>
+
+@endif
+
+</div>
+</td>
+
+</tr>
+
+@empty
+<tr>
+<td colspan="5" class="text-center py-4">
+Data tema belum tersedia.
+</td>
+</tr>
+
+@endforelse
+</tbody>
                         </table>
                     </div>
                 </section>

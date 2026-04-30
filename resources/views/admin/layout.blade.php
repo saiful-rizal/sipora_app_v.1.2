@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIPORA | @yield('title','Admin')</title>
+
+    <title>SIPORA | @yield('title', 'Admin')</title>
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -11,172 +13,349 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- CUSTOM -->
+    <!-- Custom -->
     <link href="{{ asset('assets/css/admin-ux.css') }}" rel="stylesheet">
+    <style>
+        /* ===== CARD DASHBOARD ===== */
+        .card-modern {
+            background: #f6f7fb;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* HEADER */
+        .card-header-modern {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ===== TABLE ===== */
+        .table-modern {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        /* HEADER */
+        .table-modern thead th {
+            text-align: left;
+            padding: 10px 15px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* ROW */
+        .table-modern tbody tr {
+            background: #e9e9e9;
+            transition: 0.2s;
+        }
+
+        /* SELANG SELING */
+        .table-modern tbody tr:nth-child(even) {
+            background: #f3f3f3;
+        }
+
+        /* HOVER */
+        .table-modern tbody tr:hover {
+            transform: scale(1.01);
+        }
+
+        /* CELL */
+        .table-modern td {
+            padding: 14px 15px;
+            vertical-align: middle;
+        }
+
+        /* BIAR KOLOM GA NEMPEL */
+        .table-modern td,
+        .table-modern th {
+            white-space: nowrap;
+        }
+
+        /* JUDUL BOLEH WRAP */
+        .table-modern td:nth-child(2) {
+            white-space: normal;
+        }
+
+        /* ROUNDING */
+        .table-modern tbody tr td:first-child {
+            border-radius: 12px 0 0 12px;
+        }
+
+        .table-modern tbody tr td:last-child {
+            border-radius: 0 12px 12px 0;
+        }
+
+        /* ===== BADGE ===== */
+        .badge-modern {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* STATUS WARNA */
+        .badge-modern.published {
+            background: #5a5cd6;
+            color: white;
+        }
+
+        .badge-modern.approved {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .badge-modern.pending {
+            background: #FFC107;
+            color: black;
+        }
+
+        .badge-modern.rejected {
+            background: #F44336;
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-    <div class="brand d-flex gap-2 mb-4 align-items-center">
-        <img src="{{ asset('assets/logo.png') }}"
-             style="height:40px; width:auto; object-fit:contain;">
-        <div>
-            <strong>SIPORA</strong><br>
-            <small>Admin Panel</small>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+        <div class="brand d-flex gap-2 mb-4 align-items-center">
+            <img src="{{ asset('assets/logo.png') }}" style="height:40px;width:auto;object-fit:contain">
+            <div>
+                <strong>SIPORA</strong><br>
+                <small>Admin Panel</small>
+            </div>
         </div>
-    </div>
 
-    <a href="{{ route('admin.dashboard') }}"
-       class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-        <i class="bi bi-grid"></i> Dashboard
-    </a>
+        <a href="{{ route('admin.dashboard') }}" class="{{ $activeMenu == 'dashboard' ? 'active' : '' }}">
+            <i class="bi bi-grid"></i> Beranda
+        </a>
 
-    <a href="{{ route('admin.jurusan.index') }}"
-       class="{{ request()->routeIs('admin.jurusan.*') ? 'active' : '' }}">
-        <i class="bi bi-diagram-3"></i> Jurusan
-    </a>
+        <!-- MENU AKADEMIKA -->
+        <div class="menu-group">
 
-    <a href="{{ route('admin.prodi.index') }}"
-       class="{{ request()->routeIs('admin.prodi.*') ? 'active' : '' }}">
-        <i class="bi bi-mortarboard"></i> Prodi
-    </a>
+            <button class="menu-toggle {{ str_contains($activeMenu, 'akademika') ? 'active' : '' }}"
+                data-bs-toggle="collapse" data-bs-target="#menuAkademika">
 
-    <a href="{{ route('admin.tema.index') }}"
-       class="{{ request()->routeIs('admin.tema.*') ? 'active' : '' }}">
-        <i class="bi bi-bookmarks"></i> Tema
-    </a>
+                <i class="bi bi-mortarboard"></i> Manajemen Akademika
+                <i class="bi bi-chevron-down ms-auto"></i>
 
-    <a href="{{ route('admin.documents.index') }}"
-       class="{{ request()->routeIs('admin.documents.*') ? 'active' : '' }}">
-        <i class="bi bi-file-earmark-text"></i> Dokumen
-    </a>
+            </button>
 
-    <a href="{{ route('admin.users.index') }}"
-       class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-        <i class="bi bi-people"></i> User
-    </a>
+            <div id="menuAkademika" class="collapse {{ str_contains($activeMenu, 'akademika') ? 'show' : '' }}">
 
-    <hr>
+                <a href="{{ route('admin.jurusan.index') }}"
+                    class="submenu {{ $activeMenu == 'jurusan' ? 'active' : '' }}">
+                    Jurusan dan Prodi
+                </a>
 
-    <!-- LOGOUT BUTTON -->
-    <button class="btn btn-outline-danger w-100 mt-2"
-            data-bs-toggle="modal"
-            data-bs-target="#logoutModal">
-        <i class="bi bi-box-arrow-right"></i> Logout
-    </button>
-</div>
+                <a href="{{ route('admin.tema.index') }}" class="submenu {{ $activeMenu == 'tema' ? 'active' : '' }}">
+                    Tema dan Rumpun
+                </a>
 
-<!-- MAIN -->
-<div class="main">
-
-    <!-- TOPBAR -->
-    <div class="topbar">
-        <h5>@yield('page_label')</h5>
-
-        <div class="d-flex gap-3 align-items-center">
-
-            <!-- SEARCH -->
-            <div class="search-topbar">
-                <i class="bi bi-search"></i>
-                <input type="text" id="globalSearch" placeholder="Cari data..."
-                       data-table-target="@yield('search_target')">
             </div>
 
-            <!-- USER -->
-            <div class="dropdown">
-                <div class="avatar dropdown-toggle"
-                     data-bs-toggle="dropdown"
-                     style="cursor:pointer;">
-                    {{ strtoupper(substr($displayName ?? 'A',0,1)) }}
+        </div>
+
+        <!-- MENU USER -->
+        <div class="menu-group">
+
+            <button class="menu-toggle {{ str_contains($activeMenu, 'users') ? 'active' : '' }}"
+                data-bs-toggle="collapse" data-bs-target="#menuUser">
+
+                <i class="bi bi-people"></i> Pengguna
+                <i class="bi bi-chevron-down ms-auto"></i>
+
+            </button>
+
+            <div id="menuUser" class="collapse {{ str_contains($activeMenu, 'users') ? 'show' : '' }}">
+
+                <a href="{{ route('admin.users.index') }}"
+                    class="submenu {{ $activeMenu == 'users' ? 'active' : '' }}">
+                    Manajemen Data
+                </a>
+
+                <a href="{{ route('admin.users.report') }}"
+                    class="submenu {{ $activeMenu == 'users_report' ? 'active' : '' }}">
+                    Laporan
+                </a>
+
+            </div>
+
+        </div>
+
+        <!-- MENU DOKUMEN -->
+        <div class="menu-group">
+
+            <button class="menu-toggle {{ str_contains($activeMenu, 'documents') ? 'active' : '' }}"
+                data-bs-toggle="collapse" data-bs-target="#menuDokumen">
+
+                <i class="bi bi-file-earmark-text"></i> Dokumen
+                <i class="bi bi-chevron-down ms-auto"></i>
+
+            </button>
+
+            <div id="menuDokumen" class="collapse {{ str_contains($activeMenu, 'documents') ? 'show' : '' }}">
+
+                <a href="{{ route('admin.documents.index') }}"
+                    class="submenu {{ $activeMenu == 'documents' ? 'active' : '' }}">
+                    Manajemen Data
+                </a>
+
+                <a href="{{ route('admin.documents.report') }}"
+                    class="submenu {{ $activeMenu == 'documents_report' ? 'active' : '' }}">
+                    Laporan
+                </a>
+
+            </div>
+
+        </div>
+
+        <hr>
+
+        <!-- LOGOUT -->
+        <button class="btn btn-outline-danger w-100 mt-2" data-bs-toggle="modal" data-bs-target="#logoutModal">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </button>
+
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+
+            <h5>@yield('page_label')</h5>
+
+            <div class="d-flex gap-3 align-items-center">
+
+                <!-- SEARCH -->
+                <div class="search-topbar">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Cari data...">
                 </div>
 
-                <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
-                     style="width:240px; border-radius:16px;">
+                <!-- USER -->
+                <div class="dropdown">
 
-                    <div class="mb-3">
-                        <strong>{{ $displayName ?? 'Admin' }}</strong><br>
-                        <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
+                    <div class="avatar dropdown-toggle" data-bs-toggle="dropdown" style="cursor:pointer">
+                        {{ strtoupper(substr($displayName ?? 'A', 0, 1)) }}
                     </div>
 
-                    <hr class="my-2">
+                    <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
+                        style="width:240px;border-radius:16px">
 
-                    <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
-                        <i class="bi bi-person"></i> Profile
-                    </a>
+                        <div class="mb-3">
+                            <strong>{{ $displayName ?? 'Admin' }}</strong><br>
+                            <small class="text-muted">{{ $displayRole ?? 'Admin' }}</small>
+                        </div>
 
-                    <a href="#" class="dropdown-item d-flex align-items-center gap-2">
-                        <i class="bi bi-gear"></i> Settings
-                    </a>
+                        <hr class="my-2">
 
-                    <hr class="my-2">
+                        <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2">
+                            <i class="bi bi-person"></i> Profile
+                        </a>
+
+                        <a href="#" class="dropdown-item d-flex align-items-center gap-2">
+                            <i class="bi bi-gear"></i> Settings
+                        </a>
+
+                    </div>
+
                 </div>
+
             </div>
 
         </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            @yield('content')
+        </div>
+
     </div>
 
-    <!-- CONTENT -->
-    <div class="content">
-        @yield('content')
-    </div>
-</div>
+    <!-- MODAL LOGOUT -->
+    <div class="modal fade" id="logoutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
 
-<!-- MODAL LOGOUT -->
-<div class="modal fade" id="logoutModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Konfirmasi Logout</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-            <div class="modal-header">
-                <h6 class="modal-title">Konfirmasi Logout</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+                <div class="modal-body">
+                    Anda akan keluar dari sistem. Lanjutkan?
+                </div>
 
-            <div class="modal-body">
-                Anda akan keluar dari sistem. Lanjutkan?
-            </div>
+                <div class="modal-footer">
 
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">
-                    Batal
-                </button>
-
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="btn btn-danger">
-                        Ya, Logout
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">
+                        Batal
                     </button>
-                </form>
-            </div>
 
+                    <form method="POST" action="{{ route('auth.logout') }}">
+                        @csrf
+                        <button class="btn btn-danger">
+                            Ya, Logout
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
         </div>
     </div>
-</div>
 
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('globalSearch');
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
 
-    if (input) {
-        input.addEventListener('keyup', function () {
-            const keyword = input.value.toLowerCase();
-            const target = input.dataset.tableTarget;
+            const searchInput = document.getElementById("globalSearch");
 
-            if (!target) return;
+            if (!searchInput) return;
 
-            document.querySelectorAll(`${target} tbody tr`).forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(keyword) ? '' : 'none';
+            searchInput.addEventListener("keyup", function() {
+
+                const keyword = this.value.toLowerCase();
+                const rows = document.querySelectorAll("tbody tr");
+
+                rows.forEach(row => {
+
+                    let text = row.innerText.toLowerCase();
+
+                    row.querySelectorAll("input").forEach(input => {
+                        text += " " + input.value.toLowerCase();
+                    });
+
+                    row.querySelectorAll("select").forEach(select => {
+                        text += " " + select.options[select.selectedIndex].text
+                        .toLowerCase();
+                    });
+
+                    row.style.display = text.includes(keyword) ? "" : "none";
+
+                });
+
             });
-        });
-    }
-});
-</script>
 
-@stack('scripts')
+        });
+    </script>
+
+    @stack('scripts')
 
 </body>
+
 </html>

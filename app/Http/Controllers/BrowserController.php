@@ -12,7 +12,7 @@ class BrowserController extends Controller
 {
     public function index(Request $request): View|RedirectResponse
     {
-        if (!$this->sessionUser($request)) {
+        if (! $this->sessionUser($request)) {
             return redirect()->route('login')->with('login_error', 'Silakan login terlebih dahulu.');
         }
 
@@ -33,43 +33,67 @@ class BrowserController extends Controller
                 's.nama_status as status_name',
             ]);
 
-        if (!empty($filterJurusan)) {
+        if (! empty($filterJurusan)) {
             $query->where('d.id_jurusan', $filterJurusan);
         }
-        if (!empty($filterProdi)) {
+        if (! empty($filterProdi)) {
             $query->where('d.id_prodi', $filterProdi);
         }
 
-        $documents = $query
-            ->orderByDesc('d.tgl_unggah')
-            ->get()
-            ->map(fn ($doc) => $this->mapDocument($doc));
+        // Apply sorting
+        $sort = $request->query('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('d.tgl_unggah', 'asc');
+                break;
+            case 'title_az':
+                $query->orderBy('d.judul', 'asc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('d.tgl_unggah', 'desc');
+                break;
+        }
+
+        $documents = $query->get()->map(fn ($doc) => $this->mapDocument($doc));
+
+        // Get all prodi for initial load (without jurusan filter)
+        $allProdi = DB::table('master_prodi')->orderBy('nama_prodi')->get();
 
         return view('browser', [
             'documents' => $documents,
             'jurusan_data' => DB::table('master_jurusan')->orderBy('nama_jurusan')->get(),
-            'prodi_data' => DB::table('master_prodi')->orderBy('nama_prodi')->get(),
+            'prodi_data' => $allProdi,
             'filter_jurusan' => $filterJurusan,
             'filter_prodi' => $filterProdi,
         ]);
     }
 
+    /**
+     * Get Prodi by Jurusan ID (for AJAX dynamic dropdown)
+     */
     public function getProdi(Request $request): JsonResponse
     {
-        $idJurusan = (int) $request->query('id_jurusan', 0);
+        // PERBAIKAN: Gunakan 'jurusan_id' sesuai dengan yang dikirim JavaScript
+        $idJurusan = (int) $request->query('jurusan_id', 0);
 
-        return response()->json(
-            DB::table('master_prodi')
-                ->where('id_jurusan', $idJurusan)
-                ->orderBy('nama_prodi')
-                ->select('id_prodi', 'nama_prodi')
-                ->get()
-        );
+        // Jika ID jurusan tidak valid, return empty array
+        if ($idJurusan <= 0) {
+            return response()->json([]);
+        }
+
+        $prodi = DB::table('master_prodi')
+            ->where('id_jurusan', $idJurusan)
+            ->orderBy('nama_prodi')
+            ->select('id_prodi', 'nama_prodi')
+            ->get();
+
+        return response()->json($prodi);
     }
 
     public function getDetail(Request $request): JsonResponse
     {
-        if (!$this->sessionUser($request)) {
+        if (! $this->sessionUser($request)) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
         }
 
@@ -95,7 +119,7 @@ class BrowserController extends Controller
             ])
             ->first();
 
-        if (!$document) {
+        if (! $document) {
             return response()->json(['success' => false, 'message' => 'Document not found'], 404);
         }
 
@@ -108,8 +132,8 @@ class BrowserController extends Controller
     private function mapDocument(object $doc): array
     {
         $fileName = basename((string) ($doc->file_path ?? ''));
-        $fileDiskPath = public_path('uploads/documents/' . $fileName);
-        $keywords = !empty($doc->kata_kunci)
+        $fileDiskPath = public_path('uploads/documents/'.$fileName);
+        $keywords = ! empty($doc->kata_kunci)
             ? array_values(array_filter(array_map('trim', explode(',', $doc->kata_kunci))))
             : [];
 
@@ -120,7 +144,7 @@ class BrowserController extends Controller
             'file_type' => strtolower(pathinfo($fileName, PATHINFO_EXTENSION)),
             'file_size' => is_file($fileDiskPath) ? filesize($fileDiskPath) : 0,
             'file_name' => $fileName,
-            'download_url' => asset('uploads/documents/' . $fileName),
+            'download_url' => asset('uploads/documents/'.$fileName),
             'tgl_unggah' => $doc->tgl_unggah,
             'uploader_name' => $doc->uploader_name,
             'uploader_email' => $doc->uploader_email,
@@ -160,7 +184,7 @@ class BrowserController extends Controller
     private function sessionUser(Request $request): ?array
     {
         $sessionUser = $request->session()->get('auth_user');
-        if (!$sessionUser || empty($sessionUser['id_user'])) {
+        if (! $sessionUser || empty($sessionUser['id_user'])) {
             return null;
         }
 

@@ -50,15 +50,15 @@ class DashboardController extends Controller
             ->orderByDesc('dokumen.tgl_unggah');
 
         $documents = $documentsQuery->get()->map(function ($doc) {
-                $mapped = (array) $doc;
+            $mapped = (array) $doc;
             $filePath = (string) ($doc->file_path ?? '');
             $fileName = basename($filePath);
             $filePublicPath = public_path('uploads/documents/' . $fileName);
             $mapped['file_size'] = is_file($filePublicPath) ? filesize($filePublicPath) : 0;
-                $mapped['status_badge'] = $this->mapStatusBadge((int) ($doc->status_id ?? 0));
-                $mapped['status_name'] = $mapped['status_name'] ?: $this->mapStatusName((int) ($doc->status_id ?? 0));
-                return $mapped;
-            });
+            $mapped['status_badge'] = $this->mapStatusBadge((int) ($doc->status_id ?? 0));
+            $mapped['status_name'] = $mapped['status_name'] ?: $this->mapStatusName((int) ($doc->status_id ?? 0));
+            return $mapped;
+        });
 
         $totalDokumen = $documents->count();
 
@@ -77,6 +77,7 @@ class DashboardController extends Controller
             'uploadBaru' => $uploadBaru,
             'persentasePenggunaan' => $persentasePenggunaan,
             'user' => $user,
+
         ]);
     }
 

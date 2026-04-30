@@ -2,7 +2,7 @@
 
 @section('title','Data Tema')
 @section('page_label','Tema')
-
+@section('search_target','#table-tema')
 @section('content')
 
 {{-- HEADER --}}
@@ -30,8 +30,7 @@
 
     {{-- TABLE --}}
     <div class="table-responsive">
-        <table class="table table-hover align-middle" id="table-tema">
-
+    <table id="table-tema" class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
                     <th>ID</th>

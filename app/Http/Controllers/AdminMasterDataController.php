@@ -6,9 +6,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Exports\UserReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminMasterDataController extends Controller
 {
+
+    /*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
+
     public function index(Request $request): View|RedirectResponse
     {
         return $this->dashboard($request);
@@ -27,6 +37,7 @@ class AdminMasterDataController extends Controller
             'users' => DB::table('users')->count(),
         ];
 
+        // DATA STATUS DOKUMEN UNTUK CHART
         $statusData = DB::table('master_status_dokumen as msd')
             ->leftJoin('dokumen as d', 'msd.status_id', '=', 'd.status_id')
             ->select('msd.nama_status', DB::raw('COUNT(d.dokumen_id) as jumlah'))
@@ -35,15 +46,35 @@ class AdminMasterDataController extends Controller
 
         $labels = $statusData->pluck('nama_status');
         $dataJumlah = $statusData->pluck('jumlah');
+        $dokumenTerbaru = DB::table('dokumen')
+            ->leftJoin('master_tahun as y', 'dokumen.year_id', '=', 'y.year_id')
+            ->leftJoin('master_status_dokumen as s', 'dokumen.status_id', '=', 's.status_id')
+            ->select(
+                'dokumen.dokumen_id',
+                'dokumen.judul',
+                'y.tahun',
+                's.nama_status'
+            )
+            ->orderByDesc('dokumen.dokumen_id')
+            ->limit(6)
+            ->get();
 
         return view('admin.dashboard', [
             'counts' => $counts,
             'labels' => $labels,
             'dataJumlah' => $dataJumlah,
             'activeMenu' => 'dashboard',
+            'dokumenTerbaru' => $dokumenTerbaru,
             ...$this->getAdminContext($request),
         ]);
     }
+
+
+    /*
+|--------------------------------------------------------------------------
+| MASTER JURUSAN
+|--------------------------------------------------------------------------
+*/
 
     public function jurusanIndex(Request $request): View|RedirectResponse
     {
@@ -66,9 +97,58 @@ class AdminMasterDataController extends Controller
             'jurusan' => $jurusan,
             'rumpun' => $rumpun,
             'activeMenu' => 'jurusan',
-            ...$this->getAdminContext($request),
+            ...$this->getAdminContext($request)
         ]);
     }
+
+    public function updateJurusan(Request $request, int $id): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $validated = $request->validate([
+            'nama_jurusan' => ['required', 'string', 'max:100'],
+            'id_rumpun' => ['nullable', 'integer', 'exists:master_rumpun,id_rumpun']
+        ]);
+
+        DB::table('master_jurusan')
+            ->where('id_jurusan', $id)
+            ->update([
+                'nama_jurusan' => trim($validated['nama_jurusan']),
+                'id_rumpun' => $validated['id_rumpun'] ?? null
+            ]);
+
+        return redirect()->route('admin.jurusan.index')
+            ->with('success', 'Jurusan berhasil diperbarui');
+    }
+
+    public function deleteJurusan(Request $request, int $id): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        if (!$this->isSuperAdmin($request->session()->get('auth_user')['role'] ?? null)) {
+            return redirect()->route('admin.jurusan.index')
+                ->with('error', 'Hanya Super Admin yang dapat menghapus jurusan');
+        }
+
+        DB::transaction(function () use ($id) {
+            DB::table('master_prodi')->where('id_jurusan', $id)->delete();
+            DB::table('master_jurusan')->where('id_jurusan', $id)->delete();
+        });
+
+        return redirect()->route('admin.jurusan.index')
+            ->with('success', 'Jurusan berhasil dihapus');
+    }
+
+
+    /*
+|--------------------------------------------------------------------------
+| MASTER PRODI
+|--------------------------------------------------------------------------
+*/
 
     public function prodiIndex(Request $request): View|RedirectResponse
     {
@@ -91,9 +171,55 @@ class AdminMasterDataController extends Controller
             'prodi' => $prodi,
             'jurusan' => $jurusan,
             'activeMenu' => 'prodi',
-            ...$this->getAdminContext($request),
+            ...$this->getAdminContext($request)
         ]);
     }
+
+    public function updateProdi(Request $request, int $id): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $validated = $request->validate([
+            'nama_prodi' => ['required', 'string', 'max:100'],
+            'id_jurusan' => ['required', 'integer', 'exists:master_jurusan,id_jurusan']
+        ]);
+
+        DB::table('master_prodi')
+            ->where('id_prodi', $id)
+            ->update([
+                'nama_prodi' => trim($validated['nama_prodi']),
+                'id_jurusan' => (int)$validated['id_jurusan']
+            ]);
+
+        return redirect()->route('admin.prodi.index')
+            ->with('success', 'Prodi berhasil diperbarui');
+    }
+
+    public function deleteProdi(Request $request, int $id): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        if (!$this->isSuperAdmin($request->session()->get('auth_user')['role'] ?? null)) {
+            return redirect()->route('admin.prodi.index')
+                ->with('error', 'Hanya Super Admin yang dapat menghapus prodi');
+        }
+
+        DB::table('master_prodi')->where('id_prodi', $id)->delete();
+
+        return redirect()->route('admin.prodi.index')
+            ->with('success', 'Prodi berhasil dihapus');
+    }
+
+
+    /*
+|--------------------------------------------------------------------------
+| MASTER TEMA
+|--------------------------------------------------------------------------
+*/
 
     public function temaIndex(Request $request): View|RedirectResponse
     {
@@ -116,141 +242,8 @@ class AdminMasterDataController extends Controller
             'tema' => $tema,
             'rumpun' => $rumpun,
             'activeMenu' => 'tema',
-            ...$this->getAdminContext($request),
+            ...$this->getAdminContext($request)
         ]);
-    }
-
-    public function usersIndex(Request $request): View|RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        $users = DB::table('users')
-            ->select('id_user', 'nama_lengkap', 'nim', 'username', 'email', 'role', 'status', 'created_at')
-            ->orderByDesc('created_at')
-            ->get();
-
-        return view('admin.users', [
-            'users' => $users,
-            'activeMenu' => 'users',
-            ...$this->getAdminContext($request),
-        ]);
-    }
-
-    public function updateUser(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        $actor = $request->session()->get('auth_user', []);
-        $isSuperAdmin = $this->isSuperAdmin($actor['role'] ?? null);
-
-        $validated = $request->validate([
-            'status' => ['required', 'in:pending,approved,rejected'],
-            'role' => ['nullable', 'in:superadmin,admin,mahasiswa'],
-        ]);
-
-        $target = DB::table('users')->where('id_user', $id)->first();
-        if (!$target) {
-            return redirect()->route('admin.users.index')->with('error', 'User tidak ditemukan.');
-        }
-
-        $updates = [
-            'status' => $validated['status'],
-        ];
-
-        if ($isSuperAdmin && isset($validated['role'])) {
-            if ((int) ($actor['id_user'] ?? 0) === $id && $validated['role'] !== 'superadmin') {
-                return redirect()->route('admin.users.index')->with('error', 'Super Admin tidak dapat menurunkan role akun sendiri.');
-            }
-
-            $updates['role'] = $validated['role'];
-        }
-
-        if (!$isSuperAdmin && in_array((string) $target->role, ['admin', 'superadmin'], true)) {
-            return redirect()->route('admin.users.index')->with('error', 'Admin biasa tidak dapat mengubah akun admin lain.');
-        }
-
-        DB::table('users')->where('id_user', $id)->update($updates);
-
-        return redirect()->route('admin.users.index')->with('success', 'Data user berhasil diperbarui.');
-    }
-
-    public function updateJurusan(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        $validated = $request->validate([
-            'nama_jurusan' => ['required', 'string', 'max:100'],
-            'id_rumpun' => ['nullable', 'integer', 'exists:master_rumpun,id_rumpun'],
-        ]);
-
-        DB::table('master_jurusan')
-            ->where('id_jurusan', $id)
-            ->update([
-                'nama_jurusan' => trim($validated['nama_jurusan']),
-                'id_rumpun' => $validated['id_rumpun'] ?? null,
-            ]);
-
-        return redirect()->route('admin.jurusan.index')->with('success', 'Data jurusan berhasil diperbarui.');
-    }
-
-    public function deleteJurusan(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        if (!$this->isSuperAdmin($request->session()->get('auth_user.role'))) {
-            return redirect()->route('admin.jurusan.index')->with('error', 'Hanya Super Admin yang dapat menghapus jurusan.');
-        }
-
-        DB::transaction(function () use ($id) {
-            DB::table('master_prodi')->where('id_jurusan', $id)->delete();
-            DB::table('master_jurusan')->where('id_jurusan', $id)->delete();
-        });
-
-        return redirect()->route('admin.jurusan.index')->with('success', 'Jurusan berhasil dihapus.');
-    }
-
-    public function updateProdi(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        $validated = $request->validate([
-            'nama_prodi' => ['required', 'string', 'max:100'],
-            'id_jurusan' => ['required', 'integer', 'exists:master_jurusan,id_jurusan'],
-        ]);
-
-        DB::table('master_prodi')
-            ->where('id_prodi', $id)
-            ->update([
-                'nama_prodi' => trim($validated['nama_prodi']),
-                'id_jurusan' => (int) $validated['id_jurusan'],
-            ]);
-
-        return redirect()->route('admin.prodi.index')->with('success', 'Data prodi berhasil diperbarui.');
-    }
-
-    public function deleteProdi(Request $request, int $id): RedirectResponse
-    {
-        if ($redirect = $this->ensureAdmin($request)) {
-            return $redirect;
-        }
-
-        if (!$this->isSuperAdmin($request->session()->get('auth_user.role'))) {
-            return redirect()->route('admin.prodi.index')->with('error', 'Hanya Super Admin yang dapat menghapus prodi.');
-        }
-
-        DB::table('master_prodi')->where('id_prodi', $id)->delete();
-
-        return redirect()->route('admin.prodi.index')->with('success', 'Prodi berhasil dihapus.');
     }
 
     public function updateTema(Request $request, int $id): RedirectResponse
@@ -262,7 +255,7 @@ class AdminMasterDataController extends Controller
         $validated = $request->validate([
             'kode_tema' => ['nullable', 'string', 'max:50'],
             'nama_tema' => ['required', 'string', 'max:100'],
-            'id_rumpun' => ['nullable', 'integer', 'exists:master_rumpun,id_rumpun'],
+            'id_rumpun' => ['nullable', 'integer', 'exists:master_rumpun,id_rumpun']
         ]);
 
         DB::table('master_tema')
@@ -270,10 +263,11 @@ class AdminMasterDataController extends Controller
             ->update([
                 'kode_tema' => $validated['kode_tema'] ? trim($validated['kode_tema']) : null,
                 'nama_tema' => trim($validated['nama_tema']),
-                'id_rumpun' => $validated['id_rumpun'] ?? null,
+                'id_rumpun' => $validated['id_rumpun'] ?? null
             ]);
 
-        return redirect()->route('admin.tema.index')->with('success', 'Data tema berhasil diperbarui.');
+        return redirect()->route('admin.tema.index')
+            ->with('success', 'Tema berhasil diperbarui');
     }
 
     public function deleteTema(Request $request, int $id): RedirectResponse
@@ -282,23 +276,352 @@ class AdminMasterDataController extends Controller
             return $redirect;
         }
 
-        if (!$this->isSuperAdmin($request->session()->get('auth_user.role'))) {
-            return redirect()->route('admin.tema.index')->with('error', 'Hanya Super Admin yang dapat menghapus tema.');
+        if (!$this->isSuperAdmin($request->session()->get('auth_user')['role'] ?? null)) {
+            return redirect()->route('admin.tema.index')
+                ->with('error', 'Hanya Super Admin yang dapat menghapus tema');
         }
 
         DB::table('master_tema')->where('id_tema', $id)->delete();
 
-        return redirect()->route('admin.tema.index')->with('success', 'Tema berhasil dihapus.');
+        return redirect()->route('admin.tema.index')
+            ->with('success', 'Tema berhasil dihapus');
     }
+
+
+    /*
+|--------------------------------------------------------------------------
+| USER MANAGEMENT
+|--------------------------------------------------------------------------
+*/
+
+    public function usersIndex(Request $request): View|RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $superAdminUser = DB::table('users')
+            ->select('id_user', 'nama_lengkap', 'nim', 'username', 'email', 'role', 'status', 'created_at')
+            ->where('id_user', 1)
+            ->first();
+
+        $regularUsers = DB::table('users')
+            ->select('id_user', 'nama_lengkap', 'nim', 'username', 'email', 'role', 'status', 'created_at')
+            ->where('id_user', '>=', 2)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $users = collect();
+
+        if ($superAdminUser) {
+            $users->push($superAdminUser);
+        }
+
+        $users = $users->concat($regularUsers);
+
+        return view('admin.users', [
+            'users' => $users,
+            'superAdminUser' => $superAdminUser,
+            'regularUsers' => $regularUsers,
+            'activeMenu' => 'users',
+            ...$this->getAdminContext($request)
+        ]);
+    }
+    public function usersReport(Request $request): View|RedirectResponse|BinaryFileResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $query = DB::table('users')
+            ->select(
+                'id_user',
+                'nama_lengkap',
+                'username',
+                'nim',
+                'email',
+                'role',
+                'status',
+                'created_at'
+            )
+            ->orderByDesc('created_at');
+
+        // FILTER ROLE
+        if ($request->role) {
+            $query->where('role', $request->role);
+        }
+
+        // FILTER TANGGAL
+        if ($request->tgl_dari) {
+            $query->whereDate('created_at', '>=', $request->tgl_dari);
+        }
+
+        if ($request->tgl_sampai) {
+            $query->whereDate('created_at', '<=', $request->tgl_sampai);
+        }
+
+        $users = $query->get(); // ✅ INI PENTING
+
+        // SUMMARY (opsional)
+        $summary = [
+            'total' => $users->count(),
+            'approved' => $users->where('status', 'approved')->count(),
+            'pending' => $users->where('status', 'pending')->count(),
+            'rejected' => $users->where('status', 'rejected')->count(),
+        ];
+
+        // ✅ EXPORT EXCEL
+        if ($request->export === 'excel') {
+
+            $admin = $request->session()->get('auth_user');
+
+            return Excel::download(
+                new UserReportExport(
+                    $users,
+                    $request->role ?? 'Semua',
+                    $request->tgl_dari ?? '-',
+                    $request->tgl_sampai ?? '-',
+                    $admin['nama_lengkap'] ?? 'Admin'
+                ),
+                'laporan_user.xlsx'
+            );
+        }
+
+        // ✅ KIRIM KE VIEW
+        return view('admin.users_report', [
+            'users' => $users, // 🔥 INI YANG BIKIN ERROR KAMU HILANG
+            'summary' => $summary,
+            'activeMenu' => 'users_report',
+            ...$this->getAdminContext($request)
+        ]);
+    }
+    public function storeAdmin(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $actor = $request->session()->get('auth_user', []);
+
+        if (!$this->isSuperAdmin($actor['role'] ?? null)) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Hanya Super Admin yang dapat menambahkan admin');
+        }
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'max:100'],
+            'nim' => ['nullable', 'string', 'max:50'],
+            'email' => ['required', 'email', 'max:100', 'unique:users,email'],
+            'username' => ['required', 'string', 'max:50', 'unique:users,username'],
+            'password' => ['required', 'min:6', 'confirmed']
+        ]);
+
+        DB::table('users')->insert([
+            'nama_lengkap' => trim($validated['nama_lengkap']),
+            'nim' => $validated['nim'],
+            'email' => trim($validated['email']),
+            'username' => trim($validated['username']),
+            'password_hash' => password_hash($validated['password'], PASSWORD_BCRYPT),
+            'role' => 'admin',
+            'status' => 'approved',
+            'created_at' => now()
+        ]);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Admin berhasil ditambahkan');
+    }
+
+    public function updateUser(Request $request, int $id): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $actor = $request->session()->get('auth_user', []);
+        $isSuperAdmin = $this->isSuperAdmin($actor['role'] ?? null);
+
+        $target = DB::table('users')
+            ->where('id_user', $id)
+            ->first();
+
+        if (!$target) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'User tidak ditemukan');
+        }
+
+        if ((int) $target->id_user === 1) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Akun Super Admin utama tidak dapat diubah');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:pending,approved,rejected'],
+            'role' => ['nullable', 'in:superadmin,admin,mahasiswa']
+        ]);
+
+        $updates = [
+            'status' => $validated['status']
+        ];
+
+        // hanya superadmin yang boleh ubah role
+        if ($isSuperAdmin && isset($validated['role'])) {
+
+            if ((int)($actor['id_user'] ?? 0) === $id && $validated['role'] !== 'superadmin') {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Super Admin tidak dapat menurunkan role akun sendiri');
+            }
+
+            $updates['role'] = $validated['role'];
+        }
+
+        // admin biasa tidak boleh mengubah admin lain
+        if (!$isSuperAdmin && in_array($target->role, ['admin', 'superadmin'])) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Admin tidak dapat mengubah akun admin lain');
+        }
+
+        DB::table('users')
+            ->where('id_user', $id)
+            ->update($updates);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Data user berhasil diperbarui');
+    }
+    public function deleteUser(Request $request, int $id): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $user = DB::table('users')->where('id_user', $id)->first();
+
+        if (!$user) {
+            return back()->with('error', 'User tidak ditemukan');
+        }
+
+        if ((int) $user->id_user === 1) {
+            return back()->with('error', 'Akun Super Admin utama tidak dapat dihapus');
+        }
+
+        if ($user->status !== 'rejected') {
+            return back()->with('error', 'Hanya user rejected yang bisa dihapus');
+        }
+
+        DB::table('users')->where('id_user', $id)->delete();
+
+        return back()->with('success', 'User berhasil dihapus');
+    }
+
+
+    /*
+|--------------------------------------------------------------------------
+| PROFILE
+|--------------------------------------------------------------------------
+*/
+
+    public function profile(Request $request): View|RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $user = $request->session()->get('auth_user');
+
+        return view('admin.profile', [
+            'user' => $user,
+            'activeMenu' => 'profile',
+            ...$this->getAdminContext($request)
+        ]);
+    }
+
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $user = $request->session()->get('auth_user');
+
+        $validated = $request->validate([
+            'nama_lengkap' => ['required', 'max:100'],
+            'username' => ['required', 'max:50'],
+            'email' => ['required', 'email', 'max:100']
+        ]);
+
+        DB::table('users')
+            ->where('id_user', $user['id_user'])
+            ->update([
+                'nama_lengkap' => trim($validated['nama_lengkap']),
+                'username' => trim($validated['username']),
+                'email' => trim($validated['email'])
+            ]);
+
+        $user['nama_lengkap'] = $validated['nama_lengkap'];
+        $user['username'] = $validated['username'];
+        $user['email'] = $validated['email'];
+
+        $request->session()->put('auth_user', $user);
+
+        return redirect()->route('admin.profile')
+            ->with('success', 'Profil berhasil diperbarui');
+    }
+
+
+    /*
+|--------------------------------------------------------------------------
+| PASSWORD
+|--------------------------------------------------------------------------
+*/
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->ensureAdmin($request)) {
+            return $redirect;
+        }
+
+        $user = $request->session()->get('auth_user');
+
+        $validated = $request->validate([
+            'old_password' => ['required'],
+            'new_password' => ['required', 'min:6', 'confirmed']
+        ]);
+
+        $dbUser = DB::table('users')
+            ->where('id_user', $user['id_user'])
+            ->first();
+
+        if (!password_verify($validated['old_password'], $dbUser->password_hash)) {
+            return redirect()->route('admin.profile')
+                ->with('error', 'Password lama tidak sesuai');
+        }
+
+        DB::table('users')
+            ->where('id_user', $user['id_user'])
+            ->update([
+                'password_hash' => password_hash($validated['new_password'], PASSWORD_BCRYPT)
+            ]);
+
+        return redirect()->route('admin.profile')
+            ->with('success', 'Password berhasil diperbarui');
+    }
+
+
+    /*
+|--------------------------------------------------------------------------
+| HELPER
+|--------------------------------------------------------------------------
+*/
 
     private function ensureAdmin(Request $request): ?RedirectResponse
     {
         $user = $request->session()->get('auth_user');
         $role = (string) ($user['role'] ?? '');
-        $isAdmin = in_array($role, ['superadmin', 'admin', '1', 'Admin', 'SuperAdmin'], true);
+
+        $isAdmin = in_array($role, ['superadmin', 'admin', 'Admin', 'SuperAdmin', '1'], true);
 
         if (!$isAdmin) {
-            return redirect()->route('dashboard')->with('error', 'Akses ditolak. Halaman ini hanya untuk admin.');
+            return redirect()->route('dashboard')
+                ->with('error', 'Akses ditolak. Halaman ini hanya untuk admin.');
         }
 
         return null;
@@ -306,7 +629,7 @@ class AdminMasterDataController extends Controller
 
     private function isSuperAdmin(string|int|null $role): bool
     {
-        return in_array((string) $role, ['superadmin', 'SuperAdmin'], true);
+        return in_array((string)$role, ['superadmin', 'SuperAdmin'], true);
     }
 
     private function getAdminContext(Request $request): array
@@ -315,7 +638,7 @@ class AdminMasterDataController extends Controller
 
         return [
             'displayName' => $sessionUser['nama_lengkap'] ?? ($sessionUser['username'] ?? 'Admin'),
-            'isSuperAdmin' => $this->isSuperAdmin($sessionUser['role'] ?? ''),
+            'isSuperAdmin' => $this->isSuperAdmin($sessionUser['role'] ?? '')
         ];
     }
 }
