@@ -57,8 +57,52 @@
 
     </div>
 
+<<<<<<< HEAD
     <!-- ===== CHART ===== -->
     <div class="row mt-3 mb-2">
+=======
+    <!-- ===== QUICK ACCESS ===== -->
+    <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="mb-0">Akses Cepat</h5>
+                    <small class="text-muted">Navigasi cepat ke fitur utama</small>
+                </div>
+                <span class="badge bg-primary-subtle text-primary">
+                    <i class="bi bi-lightning-charge"></i> Quick Menu
+                </span>
+            </div>
+
+            <div class="row g-2">
+
+                <div class="col-md-3">
+                    <a href="{{ route('admin.jurusan.index') }}" class="quick-btn">
+                        <i class="bi bi-diagram-3"></i> Jurusan
+                    </a>
+                </div>
+
+               
+
+                <div class="col-md-3">
+                    <a href="{{ route('admin.tema.index') }}" class="quick-btn">
+                        <i class="bi bi-bookmarks"></i> Tema
+                    </a>
+                </div>
+
+                <div class="col-md-3">
+                    <a href="{{ route('admin.users.index') }}" class="quick-btn">
+                        <i class="bi bi-people"></i> User
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <div class="row mt-4">
+>>>>>>> 19adf2ee80a2bf764b8413ab32f1f26955dc224e
 
         <!-- Bar Chart -->
         <div class="col-md-7">

@@ -136,33 +136,49 @@ class UploadController extends Controller
                 'created_at' => now(),
             ]);
 
-            DB::table('notifications')->insert([
-                [
-                    'user_id' => null,
-                    'actor_id' => $user['id_user'],
-                    'doc_id' => $docId,
-                    'type' => 'upload',
-                    'title' => 'Dokumen Baru',
-                    'message' => '<strong>' . e($user['username']) . '</strong> mengunggah dokumen: "' . e($validated['judul']) . '"',
-                    'icon_type' => 'info',
-                    'icon_class' => 'bi-file-earmark-plus',
-                    'is_read' => 0,
-                    'created_at' => now(),
-                ],
-                [
-                    'user_id' => $user['id_user'],
-                    'actor_id' => $user['id_user'],
-                    'doc_id' => $docId,
-                    'type' => 'upload_confirm',
-                    'title' => 'Upload Berhasil',
-                    'message' => 'Dokumen "' . e($validated['judul']) . '" berhasil diunggah.',
-                    'icon_type' => 'success',
-                    'icon_class' => 'bi-check-circle-fill',
-                    'is_read' => 0,
-                    'created_at' => now(),
-                ],
-            ]);
+        // =======================
+// 🔔 NOTIFIKASI (GANTI DI SINI)
+// =======================
 
+// ambil semua admin
+$admins = DB::table('users')
+    ->whereIn('role', ['admin', 'superadmin', 'Admin', 'SuperAdmin'])
+    ->pluck('id_user');
+
+$notifications = [];
+
+// notif ke admin
+foreach ($admins as $adminId) {
+    $notifications[] = [
+        'user_id' => $adminId,
+        'actor_id' => $user['id_user'],
+        'doc_id' => $docId,
+        'type' => 'upload',
+        'title' => 'Dokumen Baru',
+        'message' => '<strong>' . e($user['username']) . '</strong> mengunggah dokumen: "' . e($validated['judul']) . '"',
+        'icon_type' => 'info',
+        'icon_class' => 'bi-file-earmark-plus',
+        'is_read' => 0,
+        'created_at' => now(),
+    ];
+}
+
+// notif ke user sendiri
+$notifications[] = [
+    'user_id' => $user['id_user'],
+    'actor_id' => $user['id_user'],
+    'doc_id' => $docId,
+    'type' => 'upload_confirm',
+    'title' => 'Upload Berhasil',
+    'message' => 'Dokumen "' . e($validated['judul']) . '" berhasil diunggah.',
+    'icon_type' => 'success',
+    'icon_class' => 'bi-check-circle-fill',
+    'is_read' => 0,
+    'created_at' => now(),
+];
+
+// simpan notif
+DB::table('notifications')->insert($notifications);
             DB::commit();
 
             return redirect()
