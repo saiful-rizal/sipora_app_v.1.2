@@ -107,8 +107,11 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::put('/documents/{id}/reject',     [AdminDokumenController::class, 'reject'])->name('dokumen.reject');
     Route::put('/documents/{id}/revoke',     [AdminDokumenController::class, 'revoke'])->name('dokumen.revoke');
     Route::delete('/documents/{id}/destroy', [AdminDokumenController::class, 'destroy'])->name('dokumen.destroy');
+      // POST  → proses publikasi, generate nomor surat
+    Route::post('/documents/{id}/publish',   [AdminDokumenController::class, 'publish'])->name('dokumen.publish');
+    // GET   → download surat publikasi PDF
+    Route::get('/documents/{id}/surat',      [AdminDokumenController::class, 'suratPublikasi'])->name('dokumen.surat');
 });
-
 // ── LOGOUT ────────────────────────────────────────────────────────────────
 Route::middleware(['auth'])->post('/logout', function () {
     Auth::logout();

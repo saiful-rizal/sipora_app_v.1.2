@@ -35,10 +35,17 @@ class Dokumen extends Model
         'id_divisi',
         'year_id',
         'status_id',
+        // ── kolom publikasi (tambahan baru) ──
+        'is_published',
+        'published_at',
+        'nomor_surat',
     ];
 
     protected $casts = [
-        'tgl_unggah' => 'datetime',
+        'tgl_unggah'   => 'datetime',
+        // ── cast tambahan untuk publikasi ──
+        'is_published' => 'boolean',
+        'published_at' => 'datetime',
     ];
 
     // ================= RELATION =================

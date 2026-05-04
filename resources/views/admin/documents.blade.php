@@ -16,21 +16,26 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         @php
-            $totalApproved = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['diterbitkan','approved','disetujui']))->count();
-            $totalPending  = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['menunggu review','pending','draft']))->count();
-            $totalRejected = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['ditolak','rejected']))->count();
+            $totalApproved   = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['diterbitkan','approved','disetujui']))->count();
+            $totalPending    = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['menunggu review','pending','draft']))->count();
+            $totalRejected   = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['ditolak','rejected']))->count();
+            $totalPublished  = $dokumens->filter(fn($d) => (bool) $d->is_published)->count();
         @endphp
         <div class="d-flex gap-2 flex-wrap">
             <div class="info-chip"><i class="bi bi-file-earmark-text"></i> {{ $dokumens->count() }}</div>
             <div class="info-chip success"><i class="bi bi-check-circle"></i> {{ $totalApproved }}</div>
             <div class="info-chip warning"><i class="bi bi-hourglass-split"></i> {{ $totalPending }}</div>
             <div class="info-chip danger"><i class="bi bi-x-circle"></i> {{ $totalRejected }}</div>
+            <div class="info-chip" style="background:#e8f4fd;color:#0d6efd;border-color:#90c7f5">
+                <i class="bi bi-broadcast"></i> {{ $totalPublished }} Publikasi
+            </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-sm btn-outline-primary active" onclick="filterStatus('all', this)">Semua</button>
             <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('pending', this)">Pending</button>
             <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('approved', this)">Approved</button>
             <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('rejected', this)">Rejected</button>
+            <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('published', this)">Publikasi</button>
         </div>
     </div>
 
@@ -39,6 +44,7 @@
             <thead class="table-light">
                 <tr>
                     <th>ID</th>
+                    <th style="min-width:140px">Uploader</th>
                     <th style="min-width:180px">Judul</th>
                     <th style="min-width:190px">Abstrak</th>
                     <th style="min-width:120px">Tema</th>
@@ -51,23 +57,45 @@
                     <th style="min-width:100px">File</th>
                     <th style="min-width:110px">Tgl Unggah</th>
                     <th style="min-width:110px">Status</th>
-                    <th class="text-center" style="min-width:170px">Aksi</th>
+                    <th style="min-width:110px">Publikasi</th>
+                    <th class="text-center" style="min-width:200px">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($dokumens as $item)
                 @php
-                    $namaStatus = strtolower($item->status->nama_status ?? '');
-                    $isApproved = in_array($namaStatus, ['diterbitkan','approved','disetujui']);
-                    $isRejected = in_array($namaStatus, ['ditolak','rejected']);
-                    $isPending  = !$isApproved && !$isRejected;
-                    $filterKey  = $isApproved ? 'approved' : ($isRejected ? 'rejected' : 'pending');
-                    $badgeClass = $isApproved ? 'bg-success-subtle text-success'
-                                : ($isRejected ? 'bg-danger-subtle text-danger'
-                                : 'bg-warning-subtle text-warning');
+                    $namaStatus  = strtolower($item->status->nama_status ?? '');
+                    $isApproved  = in_array($namaStatus, ['diterbitkan','approved','disetujui']);
+                    $isRejected  = in_array($namaStatus, ['ditolak','rejected']);
+                    $isPending   = !$isApproved && !$isRejected;
+
+                    // FIX: cast eksplisit agar nilai 0/1 dari DB tidak dianggap truthy/falsy secara tidak konsisten
+                    $isPublished = (bool) $item->is_published;
+
+                    // untuk filter row: published override semua
+                    $filterKey   = $isPublished ? 'published' : ($isApproved ? 'approved' : ($isRejected ? 'rejected' : 'pending'));
+
+                    $badgeClass  = $isApproved ? 'bg-success-subtle text-success'
+                                 : ($isRejected ? 'bg-danger-subtle text-danger'
+                                 : 'bg-warning-subtle text-warning');
                 @endphp
                 <tr data-status="{{ $filterKey }}">
                     <td>{{ $item->dokumen_id }}</td>
+
+                    {{-- UPLOADER --}}
+                    <td>
+                        <span class="d-inline-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold"
+                                  style="width:26px;height:26px;font-size:.7rem;flex-shrink:0">
+                                {{ strtoupper(substr($item->uploader->nama_lengkap ?? '?', 0, 1)) }}
+                            </span>
+                            <span class="d-inline-block text-truncate" style="max-width:100px"
+                                  title="{{ $item->uploader->nama_lengkap ?? '-' }}">
+                                {{ $item->uploader->nama_lengkap ?? '-' }}
+                            </span>
+                        </span>
+                    </td>
+
                     <td>
                         <span class="fw-semibold d-inline-block text-truncate" style="max-width:160px"
                               title="{{ $item->judul }}">{{ $item->judul }}</span>
@@ -127,13 +155,49 @@
                     <td>
                         <span class="badge {{ $badgeClass }}">{{ $item->status->nama_status ?? 'Unknown' }}</span>
                     </td>
+
+                    {{-- ============================================
+                         KOLOM PUBLIKASI — FIX UTAMA
+                         Sebelumnya: kondisi $isPublished tidak benar
+                         karena is_published tidak di-cast boolean di Model
+                    ============================================ --}}
+                    <td>
+                        @if($isPublished)
+                            {{-- Sudah dipublikasi: tampilkan info + badge --}}
+                            <span class="badge bg-primary-subtle text-primary d-block mb-1">
+                                <i class="bi bi-broadcast me-1"></i>Dipublikasi
+                            </span>
+                            @if($item->nomor_surat)
+                                <small class="text-muted d-block" style="font-size:.7rem">{{ $item->nomor_surat }}</small>
+                            @endif
+                            @if($item->published_at)
+                                <small class="text-muted d-block" style="font-size:.7rem">
+                                    {{ \Carbon\Carbon::parse($item->published_at)->format('d M Y') }}
+                                </small>
+                            @endif
+                        @elseif($isApproved)
+                            <span class="badge bg-secondary-subtle text-secondary">Belum dipublikasi</span>
+                        @else
+                            <span class="text-muted small">-</span>
+                        @endif
+                    </td>
+
+                    {{-- ============================================
+                         KOLOM AKSI — FIX UTAMA
+                         Sebelumnya: kondisi $isApproved && $isPublished
+                         tidak terpenuhi karena is_published tidak di-cast
+                    ============================================ --}}
                     <td class="text-center">
                         <div class="d-flex gap-1 justify-content-center flex-wrap">
+
+                            {{-- Tombol Detail (selalu tampil) --}}
                             <button class="btn btn-sm btn-outline-secondary" title="Detail"
                                     onclick="openDetail({{ $item->dokumen_id }})">
                                 <i class="bi bi-eye"></i>
                             </button>
+
                             @if($isPending)
+                                {{-- ── PENDING: Approve & Reject ── --}}
                                 <button class="btn btn-sm btn-outline-success" title="Approve"
                                         onclick="openApproveModal({{ $item->dokumen_id }}, '{{ addslashes($item->judul) }}')">
                                     <i class="bi bi-check-lg"></i>
@@ -142,10 +206,16 @@
                                         onclick="openRejectModal({{ $item->dokumen_id }})">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
-                            @elseif($isApproved)
+
+                            @elseif($isApproved && !$isPublished)
+                                {{-- ── APPROVED, BELUM PUBLISH: Publikasi + Revoke + Reject ── --}}
+                                <button class="btn btn-sm btn-outline-primary" title="Publikasi"
+                                        onclick="openPublishModal({{ $item->dokumen_id }}, '{{ addslashes($item->judul) }}')">
+                                    <i class="bi bi-broadcast"></i>
+                                </button>
                                 <form action="{{ route('admin.dokumen.revoke', $item->dokumen_id) }}" method="POST" class="d-inline">
                                     @csrf @method('PUT')
-                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Cabut"
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Cabut Approval"
                                             onclick="return confirm('Cabut status approved?')">
                                         <i class="bi bi-arrow-counterclockwise"></i>
                                     </button>
@@ -154,7 +224,18 @@
                                         onclick="openRejectModal({{ $item->dokumen_id }})">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
+
+                            @elseif($isApproved && $isPublished)
+                                {{-- ── SUDAH DIPUBLIKASI: Tombol Cetak Surat ── --}}
+                                <a href="{{ route('admin.dokumen.surat', $item->dokumen_id) }}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-primary"
+                                   title="Cetak Surat Publikasi (PDF)">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>Cetak Surat
+                                </a>
+
                             @elseif($isRejected)
+                                {{-- ── REJECTED: Revoke + Delete ── --}}
                                 <form action="{{ route('admin.dokumen.revoke', $item->dokumen_id) }}" method="POST" class="d-inline">
                                     @csrf @method('PUT')
                                     <button type="submit" class="btn btn-sm btn-outline-warning" title="Kembalikan ke Pending"
@@ -170,12 +251,13 @@
                                     </button>
                                 </form>
                             @endif
+
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="14" class="text-center text-muted py-5">
+                    <td colspan="16" class="text-center text-muted py-5">
                         <i class="bi bi-inbox fs-3 d-block mb-2"></i>Belum ada data dokumen
                     </td>
                 </tr>
@@ -186,7 +268,9 @@
 
 </section>
 
-{{-- MODAL APPROVE --}}
+{{-- ============================================================ --}}
+{{-- MODAL APPROVE                                                 --}}
+{{-- ============================================================ --}}
 <div class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -218,7 +302,54 @@
     </div>
 </div>
 
-{{-- MODAL REJECT --}}
+{{-- ============================================================ --}}
+{{-- MODAL PUBLIKASI                                               --}}
+{{-- FIX: form method POST (sesuai route publish yang pakai POST) --}}
+{{-- ============================================================ --}}
+<div class="modal fade" id="publishModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-2">
+                <div class="mb-3">
+                    <div class="rounded-circle bg-primary-subtle d-inline-flex align-items-center justify-content-center"
+                         style="width:72px;height:72px">
+                        <i class="bi bi-broadcast-pin text-primary" style="font-size:2rem"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bold mb-2">Publikasi Dokumen?</h5>
+                <p class="text-muted mb-1">Dokumen berikut akan dipublikasi secara resmi:</p>
+                <p class="fw-semibold text-dark" id="publishTitleText" style="font-size:0.95rem"></p>
+                <div class="alert alert-info text-start small mt-3 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Setelah dipublikasi, sistem akan otomatis:
+                    <ul class="mb-0 mt-1 ps-3">
+                        <li>Menerbitkan nomor surat publikasi unik</li>
+                        <li>Mencatat tanggal publikasi resmi</li>
+                        <li>Mengirimkan email notifikasi ke pengirim</li>
+                        <li>Menghasilkan surat keterangan yang dapat dicetak</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2 pt-2">
+                <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Batal</button>
+                {{-- FIX: method POST (bukan PUT), sesuaikan dengan route publish --}}
+                <form id="publishForm" method="POST" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-broadcast me-1"></i>Ya, Publikasi Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ============================================================ --}}
+{{-- MODAL REJECT                                                  --}}
+{{-- ============================================================ --}}
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -287,7 +418,9 @@
     </div>
 </div>
 
-{{-- MODAL ABSTRAK --}}
+{{-- ============================================================ --}}
+{{-- MODAL ABSTRAK                                                 --}}
+{{-- ============================================================ --}}
 <div class="modal fade" id="abstrakModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -302,7 +435,9 @@
     </div>
 </div>
 
-{{-- MODAL DETAIL --}}
+{{-- ============================================================ --}}
+{{-- MODAL DETAIL                                                  --}}
+{{-- ============================================================ --}}
 <div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
@@ -320,7 +455,9 @@
     </div>
 </div>
 
-{{-- TOAST --}}
+{{-- ============================================================ --}}
+{{-- TOAST                                                         --}}
+{{-- ============================================================ --}}
 @if(session('success'))
 <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="liveToast" class="toast text-bg-success border-0 show">
@@ -359,9 +496,15 @@ function openApproveModal(id, judul) {
     new bootstrap.Modal(document.getElementById('approveModal')).show();
 }
 
+// FIX: form publish tidak pakai @method('POST') lagi — cukup @csrf + POST biasa
+function openPublishModal(id, judul) {
+    document.getElementById('publishForm').action = `/admin/documents/${id}/publish`;
+    document.getElementById('publishTitleText').textContent = judul;
+    new bootstrap.Modal(document.getElementById('publishModal')).show();
+}
+
 function openRejectModal(id) {
     document.getElementById('rejectForm').action = `/admin/documents/${id}/reject`;
-    // Reset form
     document.getElementById('rejectForm').reset();
     document.getElementById('uploadFileReviewed').style.display = 'none';
     document.getElementById('file_reviewed').required = false;
@@ -402,7 +545,10 @@ function openDetail(id) {
         const namaStatus = d.status?.nama_status ?? '-';
         const isApproved = ['diterbitkan','approved','disetujui'].includes(namaStatus.toLowerCase());
         const isRejected = ['ditolak','rejected'].includes(namaStatus.toLowerCase());
-        const color = isApproved ? 'success' : (isRejected ? 'danger' : 'warning');
+        const color      = isApproved ? 'success' : (isRejected ? 'danger' : 'warning');
+
+        // FIX: cast aman di JS juga
+        const isPublished = d.is_published === true || d.is_published === 1;
 
         const kataKunci = d.kata_kunci
             ? d.kata_kunci.split(',').map(k => `<span class="badge bg-light text-dark border me-1">${k.trim()}</span>`).join('')
@@ -421,6 +567,24 @@ function openDetail(id) {
                </a>`
             : '<span class="text-muted">-</span>';
 
+        // Blok publikasi di detail modal
+        const publikasiBlock = isPublished
+            ? `<div class="col-12">
+                   <div class="alert alert-primary d-flex align-items-center gap-2 mb-0 py-2">
+                       <i class="bi bi-broadcast-pin fs-5"></i>
+                       <div>
+                           <strong>Sudah Dipublikasi</strong>
+                           <div class="small">Nomor Surat: <strong>${d.nomor_surat ?? '-'}</strong></div>
+                           <div class="small">Tanggal: ${d.published_at ? new Date(d.published_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-'}</div>
+                       </div>
+                       <a href="/admin/documents/${d.dokumen_id}/surat" target="_blank"
+                          class="btn btn-sm btn-primary ms-auto">
+                           <i class="bi bi-file-earmark-pdf me-1"></i>Cetak Surat PDF
+                       </a>
+                   </div>
+               </div>`
+            : '';
+
         document.getElementById('detailModalBody').innerHTML = `
         <div class="row g-3">
             <div class="col-md-9">
@@ -430,7 +594,12 @@ function openDetail(id) {
             <div class="col-md-3 text-md-end">
                 <span class="badge bg-${color}-subtle text-${color} fs-6">${namaStatus}</span>
             </div>
+            ${publikasiBlock}
             <div class="col-12"><hr class="my-1"></div>
+            <div class="col-md-4">
+                <small class="text-muted d-block">Uploader</small>
+                <strong>${d.uploader?.nama_lengkap ?? '-'}</strong>
+            </div>
             <div class="col-md-4">
                 <small class="text-muted d-block">Tema</small>
                 <strong>${d.tema?.nama_tema ?? '-'}</strong>
