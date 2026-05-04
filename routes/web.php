@@ -12,6 +12,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\AdminMasterDataController;
 use App\Http\Controllers\AdminDokumenController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AdminNotificationController;
 
 Route::redirect('/', '/dashboard');
 
@@ -67,6 +68,11 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::get('/dashboard',   [AdminMasterDataController::class, 'dashboard'])->name('dashboard');
     Route::get('/master-data', fn () => redirect()->route('admin.dashboard'))->name('master-data');
 
+    // ── Notifications ─────────────────────────────────────────────────────
+    Route::get('/notifications/latest',      [AdminNotificationController::class, 'getLatest']);
+    Route::post('/notifications/read/{id}',  [AdminNotificationController::class, 'read']);
+    Route::get('/notifications/count',       [AdminNotificationController::class, 'count']);
+
     // ── Jurusan & Prodi (1 halaman) ───────────────────────────────────────
     Route::get('/jurusan',         [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
     Route::post('/jurusan',        [AdminMasterDataController::class, 'storeJurusan'])->name('jurusan.store');
@@ -107,11 +113,12 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::put('/documents/{id}/reject',     [AdminDokumenController::class, 'reject'])->name('dokumen.reject');
     Route::put('/documents/{id}/revoke',     [AdminDokumenController::class, 'revoke'])->name('dokumen.revoke');
     Route::delete('/documents/{id}/destroy', [AdminDokumenController::class, 'destroy'])->name('dokumen.destroy');
-      // POST  → proses publikasi, generate nomor surat
+    // POST  → proses publikasi, generate nomor surat
     Route::post('/documents/{id}/publish',   [AdminDokumenController::class, 'publish'])->name('dokumen.publish');
     // GET   → download surat publikasi PDF
     Route::get('/documents/{id}/surat',      [AdminDokumenController::class, 'suratPublikasi'])->name('dokumen.surat');
 });
+
 // ── LOGOUT ────────────────────────────────────────────────────────────────
 Route::middleware(['auth'])->post('/logout', function () {
     Auth::logout();

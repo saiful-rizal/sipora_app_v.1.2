@@ -91,7 +91,6 @@
             <table class="table table-sm table-bordered align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>ID</th>
                         <th>Nama</th>
                         <th>Username</th>
                         <th>Email</th>
@@ -104,7 +103,7 @@
                 <tbody>
                     @if($superAdminUser)
                         <tr>
-                            <td>{{ $superAdminUser->id_user }}</td>
+                         
                             <td>{{ $superAdminUser->nama_lengkap }}</td>
                             <td>{{ $superAdminUser->username }}</td>
                             <td>{{ $superAdminUser->email }}</td>
@@ -117,7 +116,7 @@
                         </tr>
                     @else
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-3">
+                            <td colspan="7" class="text-center text-muted py-3">
                                 Data Super Admin utama (ID 1) tidak ditemukan
                             </td>
                         </tr>
@@ -133,7 +132,6 @@
 <table id="table-users" class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
                     <th>Nama</th>
                     <th>Username</th>
                     <th>Email</th>
@@ -152,7 +150,6 @@
 
 
 <tr data-role="{{ strtolower($item->role) }}">
-    <td>{{ $item->id_user }}</td>
     <td>{{ $item->nama_lengkap }}</td>
     <td>{{ $item->username }}</td>
     <td>{{ $item->email }}</td>
@@ -169,11 +166,23 @@
         <option value="mahasiswa" {{ $item->role=='mahasiswa'?'selected':'' }}>Mahasiswa</option>
     </select>
 
-    <select name="status" class="form-select form-select-sm" style="width:120px" {{ $lockedByRole?'disabled':'' }}>
-        <option value="pending" {{ $item->status=='pending'?'selected':'' }}>Pending</option>
-        <option value="approved" {{ $item->status=='approved'?'selected':'' }}>Approved</option>
-        <option value="rejected" {{ $item->status=='rejected'?'selected':'' }}>Rejected</option>
-    </select>
+   <select name="status" class="form-select form-select-sm status-select" style="width:120px" {{ $lockedByRole?'disabled':'' }}>
+    <option value="pending" {{ $item->status=='pending'?'selected':'' }}>Pending</option>
+    <option value="approved" {{ $item->status=='approved'?'selected':'' }}>Approved</option>
+    <option value="rejected" {{ $item->status=='rejected'?'selected':'' }}>Rejected</option>
+</select>
+
+<div class="reject-box alasan-wrapper" style="display:none;">
+    <label class="reject-label">
+        <i class="bi bi-chat-left-text"></i>
+        Alasan Penolakan
+    </label>
+
+    <textarea name="alasan_reject"
+        class="form-control alasan-reject"
+        placeholder="Contoh: Data tidak lengkap / Email tidak valid / NIM salah..."
+        rows="2"></textarea>
+</div>
 
     <!-- SAVE -->
     <button type="button" class="btn btn-sm btn-outline-primary btn-save" {{ $lockedByRole?'disabled':'' }}>
@@ -195,7 +204,7 @@
 
                 @empty
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-4">
+                    <td colspan="7" class="text-center text-muted py-4">
                         <i class="bi bi-inbox fs-3 d-block mb-2"></i>
                         Belum ada data user
                     </td>
@@ -308,100 +317,59 @@
 @endsection
 
 @push('scripts')
-
 <script>
-function filterRole(role, btn){
 
+// ========================
+// FILTER ROLE
+// ========================
+function filterRole(role, btn){
     document.querySelectorAll('.btn-outline-primary').forEach(b => {
         b.classList.remove('active');
     });
     btn.classList.add('active');
 
     document.querySelectorAll('#table-users tbody tr').forEach(row => {
-
         const rowRole = row.dataset.role;
 
         if(role === 'all'){
             row.style.display = '';
         }
         else if(role === 'admin'){
-            if(rowRole === 'admin' || rowRole === 'superadmin'){
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = (rowRole === 'admin' || rowRole === 'superadmin') ? '' : 'none';
         }
         else if(role === 'mahasiswa'){
             row.style.display = (rowRole === 'mahasiswa') ? '' : 'none';
         }
-
     });
 }
-</script>
 
-<script>
-
-document.addEventListener('DOMContentLoaded', function(){
-
-    let selectedForm = null;
-
-    const modal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
-
-    // klik tombol save
-    document.querySelectorAll('.btn-save').forEach(btn => {
-        btn.addEventListener('click', function(){
-
-         selectedDeleteForm = document.createElement('form');
-selectedDeleteForm.method = 'POST';
-selectedDeleteForm.action = `/admin/users/${this.dataset.id}`;
-
-// CSRF
-let csrf = document.createElement('input');
-csrf.type = 'hidden';
-csrf.name = '_token';
-csrf.value = '{{ csrf_token() }}';
-
-// METHOD DELETE
-let method = document.createElement('input');
-method.type = 'hidden';
-method.name = '_method';
-method.value = 'DELETE';
-
-selectedDeleteForm.appendChild(csrf);
-selectedDeleteForm.appendChild(method);
-
-document.body.appendChild(selectedDeleteForm);
-
-            modal.show();
-        });
-    });
-
-    // klik "Ya, Simpan"
-    document.getElementById('confirmSaveBtn').addEventListener('click', function(){
-        if(selectedForm){
-            selectedForm.submit();
-        }
-    });
-
-});
-
-/* SLIDE */
+// ========================
+// SLIDE PANEL
+// ========================
 function openSlide(){
     document.getElementById('slidePanel')?.classList.add('open');
     document.getElementById('overlay')?.classList.add('show');
 }
+
 function closeSlide(){
     document.getElementById('slidePanel')?.classList.remove('open');
     document.getElementById('overlay')?.classList.remove('show');
 }
+
+// ========================
+// MAIN SCRIPT
+// ========================
 document.addEventListener('DOMContentLoaded', function(){
 
     let selectedForm = null;
-    const saveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
-    const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
     let selectedDeleteForm = null;
 
+    const saveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+    const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+
+    // ========================
     // SAVE BUTTON
+    // ========================
     document.querySelectorAll('.btn-save').forEach(btn => {
         btn.addEventListener('click', function(){
             selectedForm = this.closest('form');
@@ -415,21 +383,21 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     });
 
+    // ========================
     // DELETE BUTTON
+    // ========================
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function(){
-            // buat form DELETE sementara
+
             selectedDeleteForm = document.createElement('form');
             selectedDeleteForm.method = 'POST';
             selectedDeleteForm.action = `/admin/users/${this.dataset.id}`;
 
-            // CSRF
             let csrf = document.createElement('input');
             csrf.type = 'hidden';
             csrf.name = '_token';
             csrf.value = '{{ csrf_token() }}';
 
-            // METHOD DELETE
             let method = document.createElement('input');
             method.type = 'hidden';
             method.name = '_method';
@@ -450,7 +418,33 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     });
 
-});
-</script>
+    // ========================
+    // STATUS REJECT HANDLER
+    // ========================
+    document.querySelectorAll('.status-select').forEach(select => {
 
+        let form = select.closest('form');
+        let textarea = form.querySelector('.alasan-reject');
+
+        // kondisi awal
+        if(select.value === 'rejected'){
+            textarea.style.display = 'block';
+        }
+
+        select.addEventListener('change', function(){
+            if(this.value === 'rejected'){
+                textarea.closest('.alasan-wrapper').style.display = 'block';
+                textarea.required = true;
+            } else {
+                textarea.closest('.alasan-wrapper').style.display = 'none';
+                textarea.required = false;
+                textarea.value = '';
+            }
+        });
+
+    });
+
+});
+
+</script>
 @endpush

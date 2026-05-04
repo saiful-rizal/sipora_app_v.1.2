@@ -7,7 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-
+use App\Models\Notifikasi;
 class AuthPageController extends Controller
 {
     public function showLogin(): View
@@ -153,7 +153,29 @@ class AuthPageController extends Controller
             'status' => 'pending',
             'created_at' => now(),
         ]);
+// ambil user yang baru dibuat
+$user = DB::table('users')
+    ->where('email', $validated['email'])
+    ->first();
 
+// ambil admin
+$admins = DB::table('users')
+    ->whereIn('role', ['admin','superadmin'])
+    ->get();
+
+foreach ($admins as $admin) {
+    DB::table('notifications')->insert([
+    'user_id' => $admin->id_user,
+    'actor_id' => $user->id_user,
+    'type' => 'user_pending',
+    'title' => 'User Perlu Disetujui',
+    'message' => '<strong>'.$user->nama_lengkap.'</strong> mendaftar sebagai user baru',
+    'icon_type' => 'warning',
+    'icon_class' => 'bi-person-plus',
+    'is_read' => 0,
+    'created_at' => now(),
+]);
+}
         return back()->with('register_success', 'Registrasi berhasil! Akun Anda sedang menunggu persetujuan admin sebelum bisa login.');
     }
 

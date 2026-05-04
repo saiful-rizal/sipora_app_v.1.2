@@ -9,6 +9,10 @@ use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\Exports\UserReportExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Mail\UserApproved;
+use App\Mail\UserRejected;
 
 class AdminMasterDataController extends Controller
 {
@@ -46,11 +50,25 @@ class AdminMasterDataController extends Controller
         $labels     = $statusData->pluck('nama_status');
         $dataJumlah = $statusData->pluck('jumlah');
 
+        $dokumenTerbaru = DB::table('dokumen')
+            ->leftJoin('master_tahun as y', 'dokumen.year_id', '=', 'y.year_id')
+            ->leftJoin('master_status_dokumen as s', 'dokumen.status_id', '=', 's.status_id')
+            ->select(
+                'dokumen.dokumen_id',
+                'dokumen.judul',
+                'y.tahun',
+                's.nama_status'
+            )
+            ->orderByDesc('dokumen.dokumen_id')
+            ->limit(6)
+            ->get();
+
         return view('admin.dashboard', [
-            'counts'     => $counts,
-            'labels'     => $labels,
-            'dataJumlah' => $dataJumlah,
-            'activeMenu' => 'dashboard',
+            'counts'         => $counts,
+            'labels'         => $labels,
+            'dataJumlah'     => $dataJumlah,
+            'activeMenu'     => 'dashboard',
+            'dokumenTerbaru' => $dokumenTerbaru,
             ...$this->getAdminContext($request),
         ]);
     }
@@ -388,7 +406,6 @@ class AdminMasterDataController extends Controller
                 ->with('active_tab', 'rumpun');
         }
 
-        // Set null dulu di tabel yang relasinya ke rumpun ini
         DB::table('master_jurusan')->where('id_rumpun', $id)->update(['id_rumpun' => null]);
         DB::table('master_tema')->where('id_rumpun', $id)->update(['id_rumpun' => null]);
         DB::table('master_rumpun')->where('id_rumpun', $id)->delete();
@@ -551,8 +568,9 @@ class AdminMasterDataController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'in:pending,approved,rejected'],
-            'role'   => ['nullable', 'in:superadmin,admin,mahasiswa'],
+            'status'        => ['required', 'in:pending,approved,rejected'],
+            'role'          => ['nullable', 'in:superadmin,admin,mahasiswa'],
+            'alasan_reject' => ['nullable', 'required_if:status,rejected', 'max:1000'],
         ]);
 
         $updates = ['status' => $validated['status']];
@@ -570,7 +588,26 @@ class AdminMasterDataController extends Controller
                 ->with('error', 'Admin tidak dapat mengubah akun admin lain');
         }
 
+        $oldStatus = $target->status;
+
         DB::table('users')->where('id_user', $id)->update($updates);
+
+        $user = DB::table('users')->where('id_user', $id)->first();
+
+        if ($oldStatus !== $validated['status'] && $user->email) {
+            try {
+                if ($validated['status'] === 'approved') {
+                    Mail::to($user->email)->send(new UserApproved($user->nama_lengkap));
+                } elseif ($validated['status'] === 'rejected') {
+                    Mail::to($user->email)->send(new UserRejected(
+                        $user->nama_lengkap,
+                        $validated['alasan_reject']
+                    ));
+                }
+            } catch (\Throwable $e) {
+                Log::error($e->getMessage());
+            }
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Data user berhasil diperbarui');

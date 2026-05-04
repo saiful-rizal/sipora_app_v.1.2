@@ -57,146 +57,182 @@
 
     </div>
 
-    <!-- ===== QUICK ACCESS ===== -->
-    <div class="card shadow-sm border-0 rounded-4">
-        <div class="card-body">
+    <div class="row mt-3 mb-2">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-body">
 
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                    <h5 class="mb-0">Akses Cepat</h5>
-                    <small class="text-muted">Navigasi cepat ke fitur utama</small>
-                </div>
-                <span class="badge bg-primary-subtle text-primary">
-                    <i class="bi bi-lightning-charge"></i> Quick Menu
-                </span>
-            </div>
-
-            <div class="row g-2">
-
-                <div class="col-md-3">
-                    <a href="{{ route('admin.jurusan.index') }}" class="quick-btn">
-                        <i class="bi bi-diagram-3"></i> Jurusan
-                    </a>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="mb-0">Akses Cepat</h5>
+                        <small class="text-muted">Navigasi cepat ke fitur utama</small>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary">
+                        <i class="bi bi-lightning-charge"></i> Quick Menu
+                    </span>
                 </div>
 
-            
+                <div class="row g-2">
 
-                <div class="col-md-3">
-                    <a href="{{ route('admin.tema.index') }}" class="quick-btn">
-                        <i class="bi bi-bookmarks"></i> Tema
-                    </a>
+                    <div class="col-md-3">
+                        <a href="{{ route('admin.jurusan.index') }}" class="quick-btn">
+                            <i class="bi bi-diagram-3"></i> Jurusan
+                        </a>
+                    </div>
+
+                    <div class="col-md-3">
+                        <a href="{{ route('admin.tema.index') }}" class="quick-btn">
+                            <i class="bi bi-bookmarks"></i> Tema
+                        </a>
+                    </div>
+
+                    <div class="col-md-3">
+                        <a href="{{ route('admin.users.index') }}" class="quick-btn">
+                            <i class="bi bi-people"></i> User
+                        </a>
+                    </div>
+
                 </div>
 
-                <div class="col-md-3">
-                    <a href="{{ route('admin.users.index') }}" class="quick-btn">
-                        <i class="bi bi-people"></i> User
-                    </a>
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-    <div class="row mt-4">
-
-        <!-- Bar Chart -->
-        <div class="col-md-7">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h5 class="fw-semibold">Statistik Status Dokumen</h5>
-                    <p class="text-muted small">Jumlah dokumen berdasarkan status</p>
-                    <canvas id="statusBarChart"></canvas>
-                </div>
             </div>
         </div>
 
-        <!-- Doughnut Chart -->
-        <div class="col-md-5">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body text-center">
-                    <h5 class="fw-semibold">Persentase Status Dokumen</h5>
-                    <p class="text-muted small">Distribusi Dokumen</p>
-                    <canvas id="statusPieChart" style="max-height:250px;"></canvas>
+        <div class="row mt-4">
+
+            <!-- Bar Chart -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <h5 class="fw-semibold">Statistik Status Dokumen</h5>
+                        <p class="text-muted small">Jumlah dokumen berdasarkan status</p>
+                        <canvas id="statusBarChart"></canvas>
+                    </div>
                 </div>
             </div>
+
+            <!-- Doughnut Chart -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center">
+                        <h5 class="fw-semibold">Persentase Status Dokumen</h5>
+                        <p class="text-muted small">Distribusi Dokumen</p>
+                        <canvas id="statusPieChart" style="max-height:250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-    </div>
+        <!-- ===== TABEL ===== -->
+        <div class="card-modern mt-2 mb-3">
 
-    <div class="row p-3">
-        <div class="col-md-6">
-            <canvas id="barChart"></canvas>
+            <div class="card-header-modern">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Daftar Dokumen Terbaru</span>
+            </div>
+
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th style="width:80px">ID</th>
+                        <th>Judul</th>
+                        <th style="width:120px">Tahun</th>
+                        <th style="width:150px">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($dokumenTerbaru as $item)
+                        @php
+                            $status = strtolower($item->nama_status ?? '');
+
+                            $badge = str_contains($status, 'terbit')
+                                ? 'published'
+                                : (str_contains($status, 'setuju')
+                                    ? 'approved'
+                                    : (str_contains($status, 'tolak')
+                                        ? 'rejected'
+                                        : 'pending'));
+                        @endphp
+
+                        <tr>
+                            <td>{{ $item->dokumen_id }}</td>
+                            <td>{{ $item->judul }}</td>
+                            <td>{{ $item->tahun ?? '-' }}</td>
+                            <td>
+                                <span class="badge-modern {{ $badge }}">
+                                    {{ $item->nama_status }}
+                                </span>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                Tidak ada data dokumen
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
         </div>
 
-        <div class="col-md-6">
-            <canvas id="pieChart"></canvas>
-        </div>
-    </div>
-    </section>
+        <!-- CHART JS -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            const labels = @json($labels);
+            const dataJumlah = @json($dataJumlah);
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            const colors = [
+                "#6366F1",
+                "#22C55E",
+                "#F59E0B",
+                "#EF4444",
+                "#06B6D4"
+            ];
 
-    <script>
-        const labels = @json($labels);
-        const dataJumlah = @json($dataJumlah);
-
-        const colors = [
-            "#6366F1",
-            "#22C55E",
-            "#F59E0B",
-            "#EF4444",
-            "#06B6D4"
-        ];
-
-
-        // BAR CHART
-        new Chart(document.getElementById('statusBarChart'), {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Jumlah Dokumen',
-                    data: dataJumlah,
-                    backgroundColor: colors,
-                    borderRadius: 8,
-                    barThickness: 40
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+            // BAR
+            new Chart(document.getElementById('statusBarChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataJumlah,
+                        backgroundColor: colors,
+                        borderRadius: 8
+                    }]
                 },
-
-            }
-        });
-
-
-        // PIE / DOUGHNUT CHART
-        new Chart(document.getElementById('statusPieChart'), {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: dataJumlah,
-                    backgroundColor: colors,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: "65%",
-                plugins: {
-                    legend: {
-                        position: "bottom"
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : null;
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
-    </script>
+            });
+
+            // PIE
+            new Chart(document.getElementById('statusPieChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataJumlah,
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    cutout: "65%",
+                    plugins: { legend: { position: "bottom" } }
+                }
+            });
+        </script>
 
 @endsection

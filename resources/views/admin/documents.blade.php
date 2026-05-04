@@ -6,30 +6,47 @@
 
 @section('content')
 
+{{-- HEADER --}}
 <div class="mb-4">
-    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">Modul Dokumen</span>
+    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+        Modul Dokumen
+    </span>
     <h4 class="fw-bold mb-1">Manajemen Dokumen</h4>
     <small class="text-muted">Kelola, verifikasi, dan moderasi dokumen yang diunggah mahasiswa</small>
 </div>
 
 <section class="admin-panel">
 
+    {{-- TOP BAR --}}
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+
+        {{-- STATUS CHIPS --}}
         @php
-            $totalApproved   = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['diterbitkan','approved','disetujui']))->count();
-            $totalPending    = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['menunggu review','pending','draft']))->count();
-            $totalRejected   = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['ditolak','rejected']))->count();
-            $totalPublished  = $dokumens->filter(fn($d) => (bool) $d->is_published)->count();
+            $totalApproved  = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['diterbitkan','approved','disetujui']))->count();
+            $totalPending   = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['menunggu review','pending','draft']))->count();
+            $totalRejected  = $dokumens->filter(fn($d) => in_array(strtolower($d->status->nama_status ?? ''), ['ditolak','rejected']))->count();
+            $totalPublished = $dokumens->filter(fn($d) => (bool) $d->is_published)->count();
         @endphp
+
         <div class="d-flex gap-2 flex-wrap">
-            <div class="info-chip"><i class="bi bi-file-earmark-text"></i> {{ $dokumens->count() }}</div>
-            <div class="info-chip success"><i class="bi bi-check-circle"></i> {{ $totalApproved }}</div>
-            <div class="info-chip warning"><i class="bi bi-hourglass-split"></i> {{ $totalPending }}</div>
-            <div class="info-chip danger"><i class="bi bi-x-circle"></i> {{ $totalRejected }}</div>
+            <div class="info-chip">
+                <i class="bi bi-file-earmark-text"></i> {{ $dokumens->count() }}
+            </div>
+            <div class="info-chip success">
+                <i class="bi bi-check-circle"></i> {{ $totalApproved }}
+            </div>
+            <div class="info-chip warning">
+                <i class="bi bi-hourglass-split"></i> {{ $totalPending }}
+            </div>
+            <div class="info-chip danger">
+                <i class="bi bi-x-circle"></i> {{ $totalRejected }}
+            </div>
             <div class="info-chip" style="background:#e8f4fd;color:#0d6efd;border-color:#90c7f5">
                 <i class="bi bi-broadcast"></i> {{ $totalPublished }} Publikasi
             </div>
         </div>
+
+        {{-- FILTER --}}
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-sm btn-outline-primary active" onclick="filterStatus('all', this)">Semua</button>
             <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('pending', this)">Pending</button>
@@ -37,8 +54,10 @@
             <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('rejected', this)">Rejected</button>
             <button class="btn btn-sm btn-outline-primary" onclick="filterStatus('published', this)">Publikasi</button>
         </div>
+
     </div>
 
+    {{-- TABLE --}}
     <div class="table-responsive">
         <table class="table table-hover align-middle" id="table-dokumen">
             <thead class="table-light">
@@ -69,10 +88,10 @@
                     $isRejected  = in_array($namaStatus, ['ditolak','rejected']);
                     $isPending   = !$isApproved && !$isRejected;
 
-                    // FIX: cast eksplisit agar nilai 0/1 dari DB tidak dianggap truthy/falsy secara tidak konsisten
+                    // Cast eksplisit agar nilai 0/1 dari DB konsisten
                     $isPublished = (bool) $item->is_published;
 
-                    // untuk filter row: published override semua
+                    // Filter row: published override semua
                     $filterKey   = $isPublished ? 'published' : ($isApproved ? 'approved' : ($isRejected ? 'rejected' : 'pending'));
 
                     $badgeClass  = $isApproved ? 'bg-success-subtle text-success'
@@ -80,6 +99,7 @@
                                  : 'bg-warning-subtle text-warning');
                 @endphp
                 <tr data-status="{{ $filterKey }}">
+
                     <td>{{ $item->dokumen_id }}</td>
 
                     {{-- UPLOADER --}}
@@ -96,24 +116,43 @@
                         </span>
                     </td>
 
+                    {{-- JUDUL --}}
                     <td>
                         <span class="fw-semibold d-inline-block text-truncate" style="max-width:160px"
                               title="{{ $item->judul }}">{{ $item->judul }}</span>
                     </td>
+
+                    {{-- ABSTRAK --}}
                     <td>
                         @if($item->abstrak)
-                            <span class="text-muted d-inline-block text-truncate" style="max-width:160px">{{ $item->abstrak }}</span>
+                            <span class="text-muted d-inline-block text-truncate" style="max-width:160px">
+                                {{ $item->abstrak }}
+                            </span>
                             <a href="#" class="d-block small"
-                               onclick="showAbstrak(event, `{{ addslashes($item->abstrak) }}`)">Lihat selengkapnya</a>
+                               onclick="showAbstrak(event, `{{ addslashes($item->abstrak) }}`)">
+                                Lihat selengkapnya
+                            </a>
                         @else
                             <span class="text-muted">-</span>
                         @endif
                     </td>
+
+                    {{-- TEMA --}}
                     <td>{{ $item->tema->nama_tema ?? '-' }}</td>
+
+                    {{-- JURUSAN --}}
                     <td>{{ $item->jurusan->nama_jurusan ?? '-' }}</td>
+
+                    {{-- PRODI --}}
                     <td>{{ $item->prodi->nama_prodi ?? '-' }}</td>
+
+                    {{-- DIVISI --}}
                     <td>{{ $item->divisi->nama_divisi ?? '-' }}</td>
+
+                    {{-- TAHUN --}}
                     <td>{{ $item->year->tahun ?? $item->year->nama_tahun ?? $item->year->year ?? '-' }}</td>
+
+                    {{-- KATA KUNCI --}}
                     <td>
                         @if($item->kata_kunci)
                             @foreach(explode(',', $item->kata_kunci) as $kw)
@@ -123,9 +162,11 @@
                             <span class="text-muted">-</span>
                         @endif
                     </td>
+
+                    {{-- TURNITIN --}}
                     <td>
                         @if($item->turnitin_file)
-                            <a href="{{ asset('uploads/turnitin/' . $item->turnitin_file) }}" target="_blank"
+                            <a href="{{ asset('storage/' . $item->turnitin_file) }}" target="_blank"
                                class="btn btn-sm btn-outline-info d-block mb-1">
                                 <i class="bi bi-file-earmark-pdf me-1"></i>Lihat
                             </a>
@@ -139,6 +180,8 @@
                             <span class="text-muted small">-</span>
                         @endif
                     </td>
+
+                    {{-- FILE --}}
                     <td>
                         @if($item->file_path)
                             <a href="{{ asset('uploads/documents/' . $item->file_path) }}" target="_blank"
@@ -149,21 +192,22 @@
                             <span class="text-muted small">-</span>
                         @endif
                     </td>
+
+                    {{-- TGL UNGGAH --}}
                     <td>
                         <small>{{ $item->tgl_unggah ? \Carbon\Carbon::parse($item->tgl_unggah)->format('d M Y') : '-' }}</small>
                     </td>
+
+                    {{-- STATUS --}}
                     <td>
-                        <span class="badge {{ $badgeClass }}">{{ $item->status->nama_status ?? 'Unknown' }}</span>
+                        <span class="badge {{ $badgeClass }}">
+                            {{ $item->status->nama_status ?? 'Unknown' }}
+                        </span>
                     </td>
 
-                    {{-- ============================================
-                         KOLOM PUBLIKASI — FIX UTAMA
-                         Sebelumnya: kondisi $isPublished tidak benar
-                         karena is_published tidak di-cast boolean di Model
-                    ============================================ --}}
+                    {{-- PUBLIKASI --}}
                     <td>
                         @if($isPublished)
-                            {{-- Sudah dipublikasi: tampilkan info + badge --}}
                             <span class="badge bg-primary-subtle text-primary d-block mb-1">
                                 <i class="bi bi-broadcast me-1"></i>Dipublikasi
                             </span>
@@ -182,11 +226,7 @@
                         @endif
                     </td>
 
-                    {{-- ============================================
-                         KOLOM AKSI — FIX UTAMA
-                         Sebelumnya: kondisi $isApproved && $isPublished
-                         tidak terpenuhi karena is_published tidak di-cast
-                    ============================================ --}}
+                    {{-- AKSI --}}
                     <td class="text-center">
                         <div class="d-flex gap-1 justify-content-center flex-wrap">
 
@@ -197,7 +237,7 @@
                             </button>
 
                             @if($isPending)
-                                {{-- ── PENDING: Approve & Reject ── --}}
+                                {{-- PENDING: Approve & Reject --}}
                                 <button class="btn btn-sm btn-outline-success" title="Approve"
                                         onclick="openApproveModal({{ $item->dokumen_id }}, '{{ addslashes($item->judul) }}')">
                                     <i class="bi bi-check-lg"></i>
@@ -208,7 +248,7 @@
                                 </button>
 
                             @elseif($isApproved && !$isPublished)
-                                {{-- ── APPROVED, BELUM PUBLISH: Publikasi + Revoke + Reject ── --}}
+                                {{-- APPROVED, BELUM PUBLISH: Publikasi + Revoke + Reject --}}
                                 <button class="btn btn-sm btn-outline-primary" title="Publikasi"
                                         onclick="openPublishModal({{ $item->dokumen_id }}, '{{ addslashes($item->judul) }}')">
                                     <i class="bi bi-broadcast"></i>
@@ -226,7 +266,7 @@
                                 </button>
 
                             @elseif($isApproved && $isPublished)
-                                {{-- ── SUDAH DIPUBLIKASI: Tombol Cetak Surat ── --}}
+                                {{-- SUDAH DIPUBLIKASI: Cetak Surat --}}
                                 <a href="{{ route('admin.dokumen.surat', $item->dokumen_id) }}"
                                    target="_blank"
                                    class="btn btn-sm btn-primary"
@@ -235,7 +275,7 @@
                                 </a>
 
                             @elseif($isRejected)
-                                {{-- ── REJECTED: Revoke + Delete ── --}}
+                                {{-- REJECTED: Revoke + Delete --}}
                                 <form action="{{ route('admin.dokumen.revoke', $item->dokumen_id) }}" method="POST" class="d-inline">
                                     @csrf @method('PUT')
                                     <button type="submit" class="btn btn-sm btn-outline-warning" title="Kembalikan ke Pending"
@@ -254,11 +294,13 @@
 
                         </div>
                     </td>
+
                 </tr>
                 @empty
                 <tr>
                     <td colspan="16" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>Belum ada data dokumen
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        Belum ada data dokumen
                     </td>
                 </tr>
                 @endforelse
@@ -268,9 +310,7 @@
 
 </section>
 
-{{-- ============================================================ --}}
-{{-- MODAL APPROVE                                                 --}}
-{{-- ============================================================ --}}
+{{-- MODAL APPROVE --}}
 <div class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -302,10 +342,7 @@
     </div>
 </div>
 
-{{-- ============================================================ --}}
-{{-- MODAL PUBLIKASI                                               --}}
-{{-- FIX: form method POST (sesuai route publish yang pakai POST) --}}
-{{-- ============================================================ --}}
+{{-- MODAL PUBLIKASI --}}
 <div class="modal fade" id="publishModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -335,7 +372,6 @@
             </div>
             <div class="modal-footer border-0 justify-content-center gap-2 pt-2">
                 <button class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Batal</button>
-                {{-- FIX: method POST (bukan PUT), sesuaikan dengan route publish --}}
                 <form id="publishForm" method="POST" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-primary px-4">
@@ -347,9 +383,7 @@
     </div>
 </div>
 
-{{-- ============================================================ --}}
-{{-- MODAL REJECT                                                  --}}
-{{-- ============================================================ --}}
+{{-- MODAL REJECT --}}
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -357,6 +391,7 @@
                 <h6 class="modal-title"><i class="bi bi-x-circle text-danger me-2"></i>Reject Dokumen</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+            {{-- Form reject dengan opsi kirim file (fitur dari main) --}}
             <form id="rejectForm" method="POST" enctype="multipart/form-data">
                 @csrf @method('PUT')
                 <div class="modal-body d-flex flex-column gap-3">
@@ -418,9 +453,7 @@
     </div>
 </div>
 
-{{-- ============================================================ --}}
-{{-- MODAL ABSTRAK                                                 --}}
-{{-- ============================================================ --}}
+{{-- MODAL ABSTRAK --}}
 <div class="modal fade" id="abstrakModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
@@ -435,9 +468,7 @@
     </div>
 </div>
 
-{{-- ============================================================ --}}
-{{-- MODAL DETAIL                                                  --}}
-{{-- ============================================================ --}}
+{{-- MODAL DETAIL --}}
 <div class="modal fade" id="detailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content">
@@ -455,9 +486,7 @@
     </div>
 </div>
 
-{{-- ============================================================ --}}
-{{-- TOAST                                                         --}}
-{{-- ============================================================ --}}
+{{-- TOAST --}}
 @if(session('success'))
 <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="liveToast" class="toast text-bg-success border-0 show">
@@ -496,7 +525,6 @@ function openApproveModal(id, judul) {
     new bootstrap.Modal(document.getElementById('approveModal')).show();
 }
 
-// FIX: form publish tidak pakai @method('POST') lagi — cukup @csrf + POST biasa
 function openPublishModal(id, judul) {
     document.getElementById('publishForm').action = `/admin/documents/${id}/publish`;
     document.getElementById('publishTitleText').textContent = judul;
@@ -546,8 +574,6 @@ function openDetail(id) {
         const isApproved = ['diterbitkan','approved','disetujui'].includes(namaStatus.toLowerCase());
         const isRejected = ['ditolak','rejected'].includes(namaStatus.toLowerCase());
         const color      = isApproved ? 'success' : (isRejected ? 'danger' : 'warning');
-
-        // FIX: cast aman di JS juga
         const isPublished = d.is_published === true || d.is_published === 1;
 
         const kataKunci = d.kata_kunci
@@ -555,7 +581,7 @@ function openDetail(id) {
             : '-';
 
         const turnitin = d.turnitin_file
-            ? `<a href="/uploads/turnitin/${d.turnitin_file}" target="_blank" class="btn btn-sm btn-outline-info me-1"><i class="bi bi-file-earmark-pdf me-1"></i>Lihat</a>`
+            ? `<a href="/storage/${d.turnitin_file}" target="_blank" class="btn btn-sm btn-outline-info me-1"><i class="bi bi-file-earmark-pdf me-1"></i>Lihat</a>`
             : '';
         const skor = d.turnitin
             ? `<span class="badge ${d.turnitin <= 20 ? 'bg-success-subtle text-success' : d.turnitin <= 40 ? 'bg-warning-subtle text-warning' : 'bg-danger-subtle text-danger'}">${d.turnitin}%</span>`
@@ -567,7 +593,6 @@ function openDetail(id) {
                </a>`
             : '<span class="text-muted">-</span>';
 
-        // Blok publikasi di detail modal
         const publikasiBlock = isPublished
             ? `<div class="col-12">
                    <div class="alert alert-primary d-flex align-items-center gap-2 mb-0 py-2">
