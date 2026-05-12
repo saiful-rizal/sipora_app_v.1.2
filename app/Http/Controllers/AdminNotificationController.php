@@ -81,4 +81,16 @@ class AdminNotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function readAll(Request $request)
+{
+    $userId = session('auth_user.id_user');
+
+    DB::table('notifications')
+        ->where('user_id', $userId)
+        ->where('is_read', 0)
+        ->update(['is_read' => 1]);
+
+    return response()->json(['success' => true]);
+}
 }

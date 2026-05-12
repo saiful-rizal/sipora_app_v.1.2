@@ -72,8 +72,7 @@ Route::prefix('admin')->name('admin.')->middleware(['session.auth'])->group(func
     Route::get('/notifications/latest',      [AdminNotificationController::class, 'getLatest']);
     Route::post('/notifications/read/{id}',  [AdminNotificationController::class, 'read']);
     Route::get('/notifications/count',       [AdminNotificationController::class, 'count']);
-
-    // ── Jurusan & Prodi (1 halaman) ───────────────────────────────────────
+Route::post('/admin/notifications/read-all', [AdminNotificationController::class, 'readAll']);    // ── Jurusan & Prodi (1 halaman) ───────────────────────────────────────
     Route::get('/jurusan',         [AdminMasterDataController::class, 'jurusanIndex'])->name('jurusan.index');
     Route::post('/jurusan',        [AdminMasterDataController::class, 'storeJurusan'])->name('jurusan.store');
     Route::put('/jurusan/{id}',    [AdminMasterDataController::class, 'updateJurusan'])->name('jurusan.update');

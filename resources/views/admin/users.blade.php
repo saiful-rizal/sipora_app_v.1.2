@@ -143,11 +143,11 @@
             </thead>
 
             <tbody>
-                @forelse($regularUsers as $item)
-                    @php
-                        $lockedByRole = !$isSuperAdmin && in_array((string)$item->role, ['admin','superadmin'], true);
-                    @endphp
-
+               @forelse($regularUsers as $item)
+    @php
+        $lockedByRole = !$isSuperAdmin && in_array((string)$item->role, ['admin','superadmin'], true);
+        $lockedStatus = in_array($item->status, ['approved','rejected']); // ✅ TAMBAH DI SINI
+    @endphp
 
 <tr data-role="{{ strtolower($item->role) }}">
     <td>{{ $item->nama_lengkap }}</td>
@@ -166,12 +166,17 @@
         <option value="mahasiswa" {{ $item->role=='mahasiswa'?'selected':'' }}>Mahasiswa</option>
     </select>
 
-   <select name="status" class="form-select form-select-sm status-select" style="width:120px" {{ $lockedByRole?'disabled':'' }}>
+<select name="status"
+    class="form-select form-select-sm status-select"
+    style="width:120px"
+    {{ ($lockedByRole || $lockedStatus) ? 'disabled' : '' }}>
     <option value="pending" {{ $item->status=='pending'?'selected':'' }}>Pending</option>
     <option value="approved" {{ $item->status=='approved'?'selected':'' }}>Approved</option>
     <option value="rejected" {{ $item->status=='rejected'?'selected':'' }}>Rejected</option>
 </select>
-
+@if($lockedStatus)
+    <span class="badge bg-secondary">Terkunci</span>
+@endif
 <div class="reject-box alasan-wrapper" style="display:none;">
     <label class="reject-label">
         <i class="bi bi-chat-left-text"></i>
@@ -184,11 +189,11 @@
         rows="2"></textarea>
 </div>
 
-    <!-- SAVE -->
-    <button type="button" class="btn btn-sm btn-outline-primary btn-save" {{ $lockedByRole?'disabled':'' }}>
-        <i class="bi bi-save"></i>
-    </button>
-
+  <button type="button"
+    class="btn btn-sm btn-outline-primary btn-save"
+    {{ ($lockedByRole || $lockedStatus) ? 'disabled' : '' }}>
+    <i class="bi bi-save"></i>
+</button>
     <!-- DELETE (SEJAJAR) -->
     @if($item->status === 'rejected')
        <button type="button"
@@ -367,15 +372,24 @@ document.addEventListener('DOMContentLoaded', function(){
     const saveModal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
     const deleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
 
-    // ========================
-    // SAVE BUTTON
-    // ========================
     document.querySelectorAll('.btn-save').forEach(btn => {
-        btn.addEventListener('click', function(){
-            selectedForm = this.closest('form');
-            saveModal.show();
-        });
+    btn.addEventListener('click', function(){
+
+        let form = this.closest('form');
+        let status = form.querySelector('.status-select').value;
+        let alasan = form.querySelector('.alasan-reject');
+
+        // VALIDASI REJECT
+        if(status === 'rejected' && (!alasan.value || alasan.value.trim() === '')){
+            alert('Alasan penolakan wajib diisi!');
+            alasan.focus();
+            return;
+        }
+
+        selectedForm = form;
+        saveModal.show();
     });
+});
 
     document.getElementById('confirmSaveBtn').addEventListener('click', function(){
         if(selectedForm){
@@ -426,10 +440,10 @@ document.addEventListener('DOMContentLoaded', function(){
         let form = select.closest('form');
         let textarea = form.querySelector('.alasan-reject');
 
-        // kondisi awal
-        if(select.value === 'rejected'){
-            textarea.style.display = 'block';
-        }
+      if(select.value === 'rejected'){
+    textarea.closest('.alasan-wrapper').style.display = 'block';
+    textarea.required = true;
+}
 
         select.addEventListener('change', function(){
             if(this.value === 'rejected'){

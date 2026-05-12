@@ -587,7 +587,17 @@ class AdminMasterDataController extends Controller
             return redirect()->route('admin.users.index')
                 ->with('error', 'Admin tidak dapat mengubah akun admin lain');
         }
+       // 🚨 VALIDASI APPROVE (hanya dari pending)
+if ($validated['status'] === 'approved' && $target->status !== 'pending') {
+    return redirect()->route('admin.users.index')
+        ->with('error', 'Approve hanya bisa dilakukan jika status masih Pending');
+}
 
+// 🚨 VALIDASI REJECT (harus ada alasan)
+if ($validated['status'] === 'rejected' && empty($validated['alasan_reject'])) {
+    return redirect()->route('admin.users.index')
+        ->with('error', 'Alasan penolakan wajib diisi');
+}
         $oldStatus = $target->status;
 
         DB::table('users')->where('id_user', $id)->update($updates);
@@ -716,10 +726,11 @@ class AdminMasterDataController extends Controller
             ->where('id_user', $user['id_user'])
             ->first();
 
-        if (!password_verify($validated['old_password'], $dbUser->password_hash)) {
-            return redirect()->route('admin.profile')
-                ->with('error', 'Password lama tidak sesuai');
-        }
+     if (!password_verify($validated['old_password'], $dbUser->password_hash)) {
+    return redirect()->route('admin.profile')
+        ->withErrors(['old_password' => 'Password lama yang kamu masukkan salah'])
+        ->withInput();
+}
 
         DB::table('users')
             ->where('id_user', $user['id_user'])
@@ -743,8 +754,9 @@ class AdminMasterDataController extends Controller
         $user = $request->session()->get('auth_user');
         $role = (string) ($user['role'] ?? '');
 
-        $isAdmin = in_array($role, ['superadmin', 'admin', 'Admin', 'SuperAdmin', '1'], true);
+$role = strtolower(trim($user['role'] ?? ''));
 
+$isAdmin = in_array($role, ['superadmin', 'admin'], true);
         if (!$isAdmin) {
             return redirect()->route('dashboard')
                 ->with('error', 'Akses ditolak. Halaman ini hanya untuk admin.');

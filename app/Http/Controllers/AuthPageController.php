@@ -63,7 +63,7 @@ class AuthPageController extends Controller
             'id_user' => $user->id_user,
             'username' => $user->username,
             'email' => $user->email,
-            'role' => $user->role,
+         'role' => strtolower(trim($user->role)), // 🔥 FIX DISINI
             'nama_lengkap' => $user->nama_lengkap,
             'login_time' => now()->timestamp,
         ]);

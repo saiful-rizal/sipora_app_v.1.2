@@ -173,10 +173,7 @@
 
         <hr>
 
-        <!-- LOGOUT di sidebar -->
-        <button class="btn btn-outline-danger w-100 mt-2" data-bs-toggle="modal" data-bs-target="#logoutModal">
-            <i class="bi bi-box-arrow-right"></i> Logout
-        </button>
+       
 
     </div>
 
@@ -217,7 +214,7 @@
                                 <h6 class="mb-0">Notifikasi</h6>
                                 <small class="text-muted">Riwayat pemberitahuan terbaru</small>
                             </div>
-                            <button class="btn btn-sm btn-light rounded-pill px-3" onclick="markAllRead()">
+                           <button class="btn btn-sm btn-light rounded-pill px-3" onclick="markAllRead(event)">
                                 Tandai Dibaca
                             </button>
                         </div>
@@ -348,13 +345,43 @@
         </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
+    {{-- ===== TOAST CONTAINER — notif bell, tetap kanan atas ===== --}}
     <div id="toastContainer"
-        style="position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:12px;"></div>
+        style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        ">
+    </div>
+
+    {{-- ===== ALERT CONTAINER — session flash, tengah atas ===== --}}
+    <div id="alertContainer"
+        style="
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: max-content;
+            max-width: 90vw;
+            pointer-events: none;
+        ">
+    </div>
+
+    {{-- themeToast --}}
     <div id="themeToast"></div>
 
     <!-- JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // ===== SEARCH =====
@@ -437,14 +464,27 @@
             });
         }
 
-        function markAllRead() {
-            fetch('/admin/notifications/read-all', {
-                method: 'POST',
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                }
-            }).then(() => loadNotif());
+       function markAllRead(e) {
+    if (e) e.stopPropagation();
+
+    fetch('/admin/notifications/read-all', {
+        method: 'POST',
+        headers: {
+            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
         }
+    })
+    .then(res => res.json())
+    .then(() => {
+        // update badge langsung
+        document.getElementById("notifCount").style.display = "none";
+
+        // update semua item jadi read langsung tanpa tunggu polling
+        document.querySelectorAll(".notif-item.unread").forEach(el => {
+            el.classList.remove("unread");
+        });
+    })
+    .catch(() => loadNotif()); // fallback kalau gagal
+}
 
         function loadNotif() {
             fetch('/admin/notifications/latest')
@@ -506,11 +546,12 @@
     </script>
 
     <script>
-        // ===== TOAST =====
+        // ===== TOAST — notif bell (kanan atas, style dari admin-ux.css) =====
         function showToast(notif) {
             const container = document.getElementById("toastContainer");
             const toast = document.createElement("div");
             toast.className = "toast-custom";
+            toast.style.pointerEvents = "all";
             toast.innerHTML = `
                 <div class="toast-icon"><i class="bi bi-bell-fill"></i></div>
                 <div class="toast-content">
@@ -530,10 +571,80 @@
         }
 
         function removeToast(toast) {
+            if (!toast) return;
             toast.classList.remove("show");
             toast.classList.add("hide");
             setTimeout(() => { toast.remove(); }, 300);
         }
+
+        // ===== BOOTSTRAP ALERT — session flash (tengah atas) =====
+        function showCustomToast(message, type = "info") {
+            const container = document.getElementById("alertContainer");
+
+            const bsType = type === "success" ? "success" :
+                           type === "error"   ? "danger"  :
+                           "secondary";
+
+            const icon = type === "success" ? "bi-check-circle-fill" :
+                         type === "error"   ? "bi-x-circle-fill"     :
+                         "bi-info-circle-fill";
+
+            const alert = document.createElement("div");
+            alert.className = `alert alert-${bsType} d-flex align-items-center gap-2 shadow-sm mb-0`;
+            alert.style.cssText = `
+                min-width: 280px;
+                max-width: 420px;
+                border-radius: 12px;
+                font-size: 14px;
+                font-weight: 500;
+                pointer-events: all;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: opacity .25s ease, transform .25s ease;
+            `;
+
+            alert.innerHTML = `
+                <i class="bi ${icon}" style="font-size:17px;flex-shrink:0;"></i>
+                <span style="flex:1;line-height:1.4;">${message}</span>
+                <button type="button"
+                    style="background:none;border:none;opacity:.6;cursor:pointer;
+                           font-size:20px;padding:0;line-height:1;margin-left:4px;
+                           pointer-events:all;"
+                    onclick="removeAlert(this.parentElement)">&times;</button>
+            `;
+
+            container.appendChild(alert);
+
+            // animasi masuk
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    alert.style.opacity = "1";
+                    alert.style.transform = "translateY(0)";
+                });
+            });
+
+            setTimeout(() => removeAlert(alert), 4000);
+        }
+
+        function removeAlert(el) {
+            if (!el) return;
+            el.style.opacity = "0";
+            el.style.transform = "translateY(-10px)";
+            setTimeout(() => { el.remove(); }, 280);
+        }
+    </script>
+
+    <script>
+        // ===== SESSION FLASH =====
+        document.addEventListener("DOMContentLoaded", function () {
+            @if(session('success'))
+                showCustomToast("{{ session('success') }}", "success");
+            @endif
+
+            @if(session('error'))
+                showCustomToast("{{ session('error') }}", "error");
+            @endif
+        });
     </script>
 
     @stack('scripts')
